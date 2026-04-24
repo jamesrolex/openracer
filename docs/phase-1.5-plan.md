@@ -232,3 +232,59 @@ Two weeks. Suggested order:
 If anything blows up, the pin moves. The whole phase is meant to be
 finishable inside two weeks of part-time work — not a precise
 schedule.
+
+---
+
+## Retro — 2026-04-24 evening (Phase 1.5 condensed)
+
+The Phase 1.5 plan was written this morning, all four features built and
+committed by evening. Single dev session, ~five hours of focused work
+including the Navionics-research detour that motivated the phase.
+
+**Shipped:**
+- ✅ GUN! one-tap button + 4-second Undo affordance. Replaces the
+  buried "Sync" button. Phone-grade haptic at the tap.
+- ✅ Favoured-end chip on StartLineReadout. Promotes the existing
+  computeLineBias output from buried text to a left/right arrow
+  with magnitude, colour-banded from neutral grey through amber to
+  red. Manual wind-direction input added to Settings (`°T 0–360`).
+- ✅ Postponement (AP) + individual recall (X) state machine.
+  RaceState extended; makeSnapshot grew a TimerExtras parameter so
+  `postponedAt` freezes the snapshot at the moment AP went up and
+  `individualRecallAt` overlays running/starting only inside the
+  4-min Rule 29.1 window. 8 new unit tests; the raceTimer suite is
+  now 22 tests total. AP banner pre-empts the GUN! button. Drop AP
+  with a 5/10/15-min restart picker. Notifications cancel on AP-
+  raise + re-arm on AP-drop; haptic refs reset cleanly.
+- ✅ GPX 1.1 export from any past race session. Pure-function
+  `buildGpx()` with 9 unit tests covering header, metadata,
+  trkpts, namespace extensions for SOG/COG, XML escaping,
+  empty-trkseg, balanced tags, and filename safety. Wired into
+  RaceSessionScreen via a new "Export GPX" toolbar action that
+  writes to FileSystem.cacheDirectory + opens the share sheet
+  (mimeType + UTI both set so iOS knows the file type).
+
+**Counts at end of phase:**
+- 213 unit tests across 20 suites, all green.
+- 17/17 expo-doctor checks pass.
+- 5 commits pushed during the phase (Phase-1.5 plan, GUN!+chip,
+  AP/X, GPX export, plus an offline-fix commit at the start).
+
+**On-water exit gate (still open):**
+- One real Wednesday-night race at Abersoch with the project owner
+  as RC, including a postponement and a general recall, finishing
+  with a clean GPX export into RaceQs.
+
+**What we learned this phase:**
+- The Phase 1 timer state machine being a pure function paid off
+  hard. AP + X dropped in via a single `extras` parameter; the
+  test suite caught every regression. Time-anchored design wins.
+- Navionics research two days ago changed positioning (the
+  "racing app for clubs the big vendors ignored" pitch) and that
+  changed scope. Phase 1.5 only exists because the research
+  identified four high-value, low-effort wins that didn't need
+  Phase 2 infrastructure.
+- Expo Go offline behaviour is unreliable. EAS Update gives a
+  noticeably better cached experience but the truly bulletproof
+  path is an EAS dev build + Apple Developer Program. Flagging
+  for the next phase boundary.
