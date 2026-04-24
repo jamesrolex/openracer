@@ -485,3 +485,45 @@ and MapLibre-dependent methods (5, 6) were deliberately deferred.
 3. Decide on Phase B trigger: if on-device QR works smoothly, the
    EAS migration can wait until chart work is needed (Week 5-6).
 
+### 2026-04-24 — Week 8 polish pass (pre-alpha)
+
+Week 8 groundwork ahead of the alpha ship: empty/error/loading
+state audit, first-launch onboarding, alpha-tester guide. No new
+features — polish only.
+
+**Shipped:**
+- `OnboardingScreen` rendered above `RootNavigator` until
+  `onboardingCompleted` flips true. Three cards (welcome, GPS
+  access, library seeded). Persisted in `useSettingsStore`. The
+  iOS/Android permission dialog appears on top on first launch
+  as useLiveTelemetry mounts — deliberate, acts as the natural
+  permission prompt.
+- Save-in-flight feedback on mark screens: Save button label
+  swaps to "Saving…" while the SQLite write is in flight
+  (MarkEditScreen, MarkBearingScreen).
+- `ActivityIndicator` added next to "Loading…" text on
+  RaceSessionsScreen and RaceSessionScreen — previously plain
+  text looked identical to a hung state.
+- `docs/alpha-tester-guide.md` drafted: install, 3-minute test,
+  what-to-test-specifically, how-to-report. Single page, no
+  accounts, no fluff.
+
+**Empty/error audit outcome:** mostly solid. MarkLibrary,
+ShareCourse, TrustedCommittees, RaceSessions already had
+tier-specific empty copy and coloured error banners. Raw error
+objects are consistently wrapped with `err instanceof Error ?
+err.message : '<friendly>'` in handlers. Deferred: permission-
+denied CTAs on MarkBearing / MarkPointAt — if GPS or compass is
+denied mid-flow, the screens show a friendly message but don't
+offer a one-tap re-request. HomeScreen covers the primary denial
+case already.
+
+**Still open at the Phase-1 exit gate:**
+- 5 timed 3-minute drills across templates + methods (on-device).
+- TestFlight build + Android APK in three alpha testers' hands —
+  requires EAS migration (Phase B trigger).
+- 100% aeroplane-mode run of the 3-minute exit test (on-device).
+
+The remaining items are all on-device / distribution work. The
+code scaffolding for the alpha ship is now complete.
+
