@@ -136,46 +136,35 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
           </View>
         </View>
 
-        <View
-          flexDirection="row"
-          alignItems="center"
-          justifyContent="space-between"
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.caption.size}
+          fontWeight={theme.type.caption.weight as '400'}
+          lineHeight={theme.type.caption.lineHeight}
           marginTop={theme.space.sm}
         >
-          <Text
-            color={theme.text.muted}
-            fontSize={theme.type.caption.size}
-            fontWeight={theme.type.caption.weight as '400'}
-            lineHeight={theme.type.caption.lineHeight}
-            flex={1}
-          >
-            {accuracyDisplay} · {freshnessDisplay}
-          </Text>
-          <Pressable
+          {accuracyDisplay} · {freshnessDisplay}
+        </Text>
+
+        <View flexDirection="row" marginTop={theme.space.sm}>
+          <HomeButton
+            label="Marks"
             onPress={() => navigation.navigate('MarkLibrary')}
-            accessibilityLabel="Open mark library"
-            hitSlop={8}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-          >
-            <View
-              minHeight={44}
-              paddingVertical={theme.space.sm}
-              paddingHorizontal={theme.space.md}
-              borderRadius={theme.radius.full}
-              backgroundColor={theme.accent}
-              flexDirection="row"
-              alignItems="center"
-            >
-              <Text
-                color={theme.bg}
-                fontSize={theme.type.bodySemi.size}
-                fontWeight={theme.type.bodySemi.weight as '600'}
-                lineHeight={theme.type.bodySemi.lineHeight}
-              >
-                Marks →
-              </Text>
-            </View>
-          </Pressable>
+            variant="primary"
+            theme={theme}
+          />
+          <HomeButton
+            label="Scan QR"
+            onPress={() => navigation.navigate('ScanCoursePush')}
+            variant="outline"
+            theme={theme}
+          />
+          <HomeButton
+            label="Committee"
+            onPress={() => navigation.navigate('CommitteeIdentity')}
+            variant="outline"
+            theme={theme}
+          />
         </View>
 
         {permissionStatus === 'denied' ? (
@@ -193,6 +182,49 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
         ) : null}
       </View>
     </SafeAreaView>
+  );
+}
+
+function HomeButton({
+  label,
+  onPress,
+  variant,
+  theme,
+}: {
+  label: string;
+  onPress: () => void;
+  variant: 'primary' | 'outline';
+  theme: ReturnType<typeof getTheme>;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityLabel={label}
+      hitSlop={4}
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flex: 1 })}
+    >
+      <View
+        minHeight={44}
+        paddingVertical={theme.space.sm}
+        paddingHorizontal={theme.space.sm}
+        marginHorizontal={theme.space.xxs}
+        borderRadius={theme.radius.full}
+        backgroundColor={variant === 'primary' ? theme.accent : 'transparent'}
+        borderColor={theme.accent}
+        borderWidth={1}
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Text
+          color={variant === 'primary' ? theme.bg : theme.accent}
+          fontSize={theme.type.bodySemi.size}
+          fontWeight={theme.type.bodySemi.weight as '600'}
+          lineHeight={theme.type.bodySemi.lineHeight}
+        >
+          {label}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
 

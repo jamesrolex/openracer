@@ -11,10 +11,14 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { CommitteeIdentityScreen } from '../screens/CommitteeIdentityScreen';
 import { CourseEntryScreen } from '../screens/CourseEntryScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MarkEditScreen } from '../screens/MarkEditScreen';
 import { MarkLibraryScreen } from '../screens/MarkLibraryScreen';
+import { ScanCoursePushScreen } from '../screens/ScanCoursePushScreen';
+import { ShareCourseScreen } from '../screens/ShareCourseScreen';
+import { TrustedCommitteesScreen } from '../screens/TrustedCommitteesScreen';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -22,6 +26,10 @@ export type RootStackParamList = {
   /** `markId` present = edit; absent = create new. */
   MarkEdit: { markId?: string };
   CourseEntry: undefined;
+  CommitteeIdentity: undefined;
+  ShareCourse: undefined;
+  ScanCoursePush: undefined;
+  TrustedCommittees: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<
@@ -44,6 +52,10 @@ export function RootNavigator() {
       <Stack.Screen name="MarkLibrary" component={MarkLibraryScreen} />
       <Stack.Screen name="MarkEdit" component={MarkEditScreen} />
       <Stack.Screen name="CourseEntry" component={CourseEntryScreen} />
+      <Stack.Screen name="CommitteeIdentity" component={CommitteeIdentityScreen} />
+      <Stack.Screen name="ShareCourse" component={ShareCourseScreen} />
+      <Stack.Screen name="ScanCoursePush" component={ScanCoursePushScreen} />
+      <Stack.Screen name="TrustedCommittees" component={TrustedCommitteesScreen} />
     </Stack.Navigator>
   );
 }

@@ -18,6 +18,7 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "OpenRacer uses your location to show your boat's position, speed, and heading while racing or cruising.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "OpenRacer uses your location to show your boat's position, speed, and heading while racing or cruising.",
+        "NSCameraUsageDescription": "OpenRacer uses the camera to scan committee-boat QR codes for course push and trust exchange.",
         "UIBackgroundModes": [
           "location"
         ]
@@ -33,7 +34,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "CAMERA"
       ]
     },
     "web": {
@@ -44,6 +46,12 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "OpenRacer uses your location to show your boat's position, speed, and heading."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "OpenRacer uses the camera to scan committee-boat QR codes for course push."
         }
       ],
       "expo-sqlite"

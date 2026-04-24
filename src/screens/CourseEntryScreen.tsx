@@ -367,6 +367,55 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
             </View>
           </Pressable>
         </View>
+
+        <View flexDirection="row" marginTop={theme.space.sm}>
+          <Pressable
+            onPress={() => navigation.navigate('ScanCoursePush')}
+            hitSlop={4}
+            style={{ flex: 1, marginRight: theme.space.sm }}
+          >
+            <View
+              paddingVertical={theme.space.sm}
+              paddingHorizontal={theme.space.md}
+              borderRadius={theme.radius.lg}
+              borderColor={theme.accent}
+              borderWidth={1}
+              alignItems="center"
+            >
+              <Text
+                color={theme.accent}
+                fontSize={theme.type.body.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+              >
+                Scan QR
+              </Text>
+            </View>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('ShareCourse')}
+            hitSlop={4}
+            disabled={!draft || !ready}
+            style={{ flex: 1 }}
+          >
+            <View
+              paddingVertical={theme.space.sm}
+              paddingHorizontal={theme.space.md}
+              borderRadius={theme.radius.lg}
+              borderColor={theme.accent}
+              borderWidth={1}
+              alignItems="center"
+              opacity={!draft || !ready ? 0.4 : 1}
+            >
+              <Text
+                color={theme.accent}
+                fontSize={theme.type.body.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+              >
+                Share as QR
+              </Text>
+            </View>
+          </Pressable>
+        </View>
       </ScrollView>
 
       <MarkPickerSheet
