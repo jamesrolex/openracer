@@ -14,7 +14,7 @@
 import Constants from 'expo-constants';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, View } from 'tamagui';
+import { Input, Text, View } from 'tamagui';
 
 import type { RootStackScreenProps } from '../navigation';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -49,6 +49,10 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
   const setSpeedUnit = useSettingsStore((s) => s.setSpeedUnit);
   const setDistanceUnit = useSettingsStore((s) => s.setDistanceUnit);
   const setCoordFormat = useSettingsStore((s) => s.setCoordFormat);
+  const manualTrueWindDegrees = useSettingsStore((s) => s.manualTrueWindDegrees);
+  const setManualTrueWindDegrees = useSettingsStore(
+    (s) => s.setManualTrueWindDegrees,
+  );
 
   const theme = getTheme(nightMode ? 'night' : 'day');
   const version = (Constants.expoConfig?.version as string | undefined) ?? 'dev';
@@ -130,6 +134,11 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
             label="Race history"
             description="Past race sessions with duration + distance + points."
             onPress={() => navigation.navigate('RaceSessions')}
+          />
+          <WindDirectionRow
+            theme={theme}
+            value={manualTrueWindDegrees}
+            onChange={setManualTrueWindDegrees}
           />
         </Section>
 
@@ -397,6 +406,64 @@ function InfoRow({
       >
         {value}
       </Text>
+    </View>
+  );
+}
+
+function WindDirectionRow({
+  theme,
+  value,
+  onChange,
+}: {
+  theme: ReturnType<typeof getTheme>;
+  value: number | null;
+  onChange: (deg: number | null) => void;
+}) {
+  function commit(text: string) {
+    const trimmed = text.trim();
+    if (trimmed === '') {
+      onChange(null);
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) return;
+    // Clamp 0-360.
+    const wrapped = ((parsed % 360) + 360) % 360;
+    onChange(wrapped);
+  }
+
+  return (
+    <View paddingVertical={theme.space.xs}>
+      <Text
+        color={theme.text.primary}
+        fontSize={theme.type.body.size}
+        fontWeight={theme.type.bodySemi.weight as '600'}
+      >
+        True wind direction (°T)
+      </Text>
+      <Text
+        color={theme.text.muted}
+        fontSize={theme.type.caption.size}
+        lineHeight={theme.type.caption.lineHeight}
+        marginTop={2}
+        marginBottom={theme.space.xs}
+      >
+        Powers the favoured-end chip on the start-line readout. Update before each start.
+        Leave blank to hide the chip.
+      </Text>
+      <Input
+        value={value === null ? '' : String(Math.round(value))}
+        onChangeText={(t) => commit(t)}
+        placeholder="e.g. 230"
+        keyboardType="numeric"
+        height={44}
+        paddingHorizontal={theme.space.md}
+        fontSize={theme.type.body.size}
+        borderColor={theme.border}
+        backgroundColor={theme.surface}
+        color={theme.text.primary}
+        placeholderTextColor={theme.text.muted}
+      />
     </View>
   );
 }

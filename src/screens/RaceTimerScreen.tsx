@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
 import { CourseProgressReadout } from '../components/CourseProgressReadout';
+import { GunSyncButton } from '../components/GunSyncButton';
 import { computeCourseDistance } from '../domain/courseDistance';
 import {
   cancelAllRaceNotifications,
@@ -40,6 +41,9 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const syncToMinute = useRaceStore((s) => s.syncToMinute);
   const shiftMinutes = useRaceStore((s) => s.shiftMinutes);
   const generalRecall = useRaceStore((s) => s.generalRecall);
+  const undoLastGunChange = useRaceStore((s) => s.undoLastGunChange);
+  const previousGunTime = useRaceStore((s) => s.previousGunTime);
+  const previousGunCapturedAt = useRaceStore((s) => s.previousGunCapturedAt);
   const abandon = useRaceStore((s) => s.abandon);
   const finish = useRaceStore((s) => s.finish);
   const setActiveSessionState = useRaceStore((s) => s.setActiveSessionState);
@@ -239,8 +243,15 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
               />
             ) : null}
 
+            <GunSyncButton
+              onSync={syncToMinute}
+              onUndo={undoLastGunChange}
+              previousGunTime={previousGunTime}
+              previousGunCapturedAt={previousGunCapturedAt}
+              variant={variant}
+            />
+
             <View flexDirection="row" marginBottom={theme.space.sm}>
-              <TimerButton label="Sync" onPress={syncToMinute} theme={theme} variant="primary" />
               <TimerButton
                 label="−1 min"
                 onPress={() => shiftMinutes(-1)}

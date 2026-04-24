@@ -27,6 +27,10 @@ export interface SettingsState {
   language: 'en-GB';
   /** First-launch onboarding gate — false until the sailor taps "Get started". */
   onboardingCompleted: boolean;
+  /** Manual true-wind direction in degrees true (0-360). Sailors without
+   *  instruments enter this once before a start; it powers the favoured-end
+   *  chip on the start-line readout. Null = unknown, chip is hidden. */
+  manualTrueWindDegrees: number | null;
 }
 
 export interface SettingsActions {
@@ -35,6 +39,7 @@ export interface SettingsActions {
   setCoordFormat: (format: LatLonFormat) => void;
   setNightMode: (on: boolean) => void;
   completeOnboarding: () => void;
+  setManualTrueWindDegrees: (deg: number | null) => void;
 }
 
 const defaults: SettingsState = {
@@ -44,6 +49,7 @@ const defaults: SettingsState = {
   nightMode: false,
   language: 'en-GB',
   onboardingCompleted: false,
+  manualTrueWindDegrees: null,
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -55,6 +61,8 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setCoordFormat: (coordFormat) => set({ coordFormat }),
       setNightMode: (nightMode) => set({ nightMode }),
       completeOnboarding: () => set({ onboardingCompleted: true }),
+      setManualTrueWindDegrees: (manualTrueWindDegrees) =>
+        set({ manualTrueWindDegrees }),
     }),
     {
       name: 'openracer.settings',
@@ -66,6 +74,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         nightMode: state.nightMode,
         language: state.language,
         onboardingCompleted: state.onboardingCompleted,
+        manualTrueWindDegrees: state.manualTrueWindDegrees,
       }),
     },
   ),

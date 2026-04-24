@@ -43,6 +43,12 @@ export interface RaceStoreState {
    *  on the next write. Null when idle or fresh. */
   lastTrackLatitude: number | null;
   lastTrackLongitude: number | null;
+  /** ISO 8601 UTC — the gun before the most recent sync/shift. Surfaced as
+   *  an "Undo" affordance for a few seconds after a fat-fingered gun-sync. */
+  previousGunTime: string | null;
+  /** ISO 8601 UTC — when previousGunTime was captured. Used to time-bound
+   *  the Undo affordance (auto-clears after the UNDO_WINDOW_MS). */
+  previousGunCapturedAt: string | null;
 }
 
 export interface RaceActions {
@@ -64,7 +70,14 @@ export interface RaceActions {
   setActiveSessionState: (state: RaceState) => Promise<void>;
   /** Fold a freshly-logged track point into the running sailed-distance. */
   addTrackDistance: (latitude: number, longitude: number) => void;
+  /** Restore the gun time to whatever it was before the most recent
+   *  syncToMinute / shiftMinutes / generalRecall, if the undo window
+   *  hasn't expired. No-op when there's nothing to undo. */
+  undoLastGunChange: () => void;
 }
+
+/** How long (ms) the "Undo last gun sync" affordance stays available. */
+export const UNDO_WINDOW_MS = 4000;
 
 const initial: RaceStoreState = {
   sequenceStartTime: null,
@@ -75,6 +88,8 @@ const initial: RaceStoreState = {
   sailedMetres: 0,
   lastTrackLatitude: null,
   lastTrackLongitude: null,
+  previousGunTime: null,
+  previousGunCapturedAt: null,
 };
 
 // Haversine great-circle distance, inlined here to avoid pulling a
@@ -123,22 +138,45 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
         const current = get().sequenceStartTime;
         if (!current) return;
         const rounded = syncToNextWholeMinute(new Date(current));
-        set({ sequenceStartTime: rounded.toISOString() });
+        set({
+          sequenceStartTime: rounded.toISOString(),
+          previousGunTime: current,
+          previousGunCapturedAt: new Date().toISOString(),
+        });
       },
 
       shiftMinutes: (deltaMinutes) => {
         const current = get().sequenceStartTime;
         if (!current) return;
         const shifted = new Date(new Date(current).getTime() + deltaMinutes * 60_000);
-        set({ sequenceStartTime: shifted.toISOString() });
+        set({
+          sequenceStartTime: shifted.toISOString(),
+          previousGunTime: current,
+          previousGunCapturedAt: new Date().toISOString(),
+        });
       },
 
       generalRecall: () => {
+        const current = get().sequenceStartTime;
         const newGun = syncToNextWholeMinute(new Date(Date.now() + 5 * 60_000));
         set((s) => ({
           sequenceStartTime: newGun.toISOString(),
           recallCount: s.recallCount + 1,
+          previousGunTime: current,
+          previousGunCapturedAt: new Date().toISOString(),
         }));
+      },
+
+      undoLastGunChange: () => {
+        const { previousGunTime, previousGunCapturedAt } = get();
+        if (!previousGunTime || !previousGunCapturedAt) return;
+        const age = Date.now() - new Date(previousGunCapturedAt).getTime();
+        if (age > UNDO_WINDOW_MS) return;
+        set({
+          sequenceStartTime: previousGunTime,
+          previousGunTime: null,
+          previousGunCapturedAt: null,
+        });
       },
 
       abandon: async () => {
@@ -197,6 +235,8 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
         sailedMetres: state.sailedMetres,
         lastTrackLatitude: state.lastTrackLatitude,
         lastTrackLongitude: state.lastTrackLongitude,
+        previousGunTime: state.previousGunTime,
+        previousGunCapturedAt: state.previousGunCapturedAt,
       }),
     },
   ),
