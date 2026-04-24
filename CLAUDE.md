@@ -82,6 +82,35 @@ Commit often. A day's work = multiple commits, not one big one.
 - **Testing:** Jest + React Native Testing Library
 - **Bundle ID:** `com.openracer.app`
 
+## Bug logging
+
+Every bug, quirk, or deferred investigation goes in `docs/bugs.md`. Numbered `B-001`, `B-002`, … — never re-use a number. See that file's header for the template.
+
+When a bug is spotted:
+1. Add a row to the index table with the next number, severity, status `investigating`.
+2. Write an entry with Symptom / Environment / Hypotheses / Diagnostic tool / Next steps.
+3. Commit under `docs:` (no code) or `fix:` (with a fix).
+4. On resolution: set row status to `fixed`, fill in the Resolution section. Never delete the entry — the history is the record.
+
+If something feels "not quite right" but isn't clearly broken, log it anyway as `low` severity. Better to have a record than to rediscover the same quirk in three months.
+
+## Audit before every commit
+
+Run `npm run audit` before you push. It chains:
+
+- `npm run typecheck` — TypeScript strict
+- `npm test` — Jest with coverage gates on `src/utils/format.ts` and `src/utils/geo.ts`
+- `npm run lint` — ESLint (Expo preset)
+- `npm run doctor` — `expo-doctor` catches dependency drift and config issues
+
+CI runs the same on every push and PR (see `.github/workflows/audit.yml`). Regressions block merge.
+
+## DevPanel
+
+In `__DEV__` builds, a floating "DEV" pill renders top-left. Tap to expand a diagnostics sheet with raw permission status, GPS values, connectivity, and any hook errors. Use this to diagnose "no data on my phone" class of issues before touching code.
+
+Stripped from production bundles via the `__DEV__` guard in `App.tsx`.
+
 ## What NOT to do
 
 - Don't add features outside Phase 0 scope
@@ -91,6 +120,8 @@ Commit often. A day's work = multiple commits, not one big one.
 - Don't use imperial units in user-facing text
 - Don't stack multiple questions when blocked — ask one
 - Don't ship code without running the tests
+- Don't fix a bug without logging it in `docs/bugs.md` first
+- Don't push without running `npm run audit`
 
 ## When you're done with a task
 
