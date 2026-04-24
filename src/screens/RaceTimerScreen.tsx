@@ -36,7 +36,8 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const shiftMinutes = useRaceStore((s) => s.shiftMinutes);
   const generalRecall = useRaceStore((s) => s.generalRecall);
   const abandon = useRaceStore((s) => s.abandon);
-  const reset = useRaceStore((s) => s.reset);
+  const finish = useRaceStore((s) => s.finish);
+  const setActiveSessionState = useRaceStore((s) => s.setActiveSessionState);
 
   const [snapshot, setSnapshot] = useState(() =>
     makeSnapshot(sequenceStartTime, new Date(), sequence),
@@ -65,12 +66,13 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
     if (snapshot.state === 'starting' && !startGunFiredRef.current) {
       startGunFiredRef.current = true;
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void setActiveSessionState('running');
     }
     if (snapshot.state === 'idle') {
       lastMinuteFiredRef.current = null;
       startGunFiredRef.current = false;
     }
-  }, [snapshot]);
+  }, [snapshot, setActiveSessionState]);
 
   // Schedule / cancel notifications in response to timer state.
   useEffect(() => {
@@ -96,9 +98,11 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
         text: 'Abandon',
         style: 'destructive',
         onPress: () => {
-          abandon();
-          void cancelAllRaceNotifications();
-          navigation.goBack();
+          void (async () => {
+            await abandon();
+            await cancelAllRaceNotifications();
+            navigation.goBack();
+          })();
         },
       },
     ]);
@@ -120,9 +124,18 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   }
 
   function handleFinish() {
-    Alert.alert('Finish race?', 'Clears the timer.', [
+    Alert.alert('Finish race?', 'Marks the session complete.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Finish', onPress: () => { reset(); navigation.goBack(); } },
+      {
+        text: 'Finish',
+        onPress: () => {
+          void (async () => {
+            await finish();
+            await cancelAllRaceNotifications();
+            navigation.goBack();
+          })();
+        },
+      },
     ]);
   }
 
@@ -258,7 +271,7 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
             </Text>
             <Pressable
               onPress={() => {
-                useRaceStore
+                void useRaceStore
                   .getState()
                   .arm(new Date(Date.now() + 5 * 60_000), null);
               }}

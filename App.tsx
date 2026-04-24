@@ -8,6 +8,7 @@ import { TamaguiProvider } from 'tamagui';
 import { DevPanel } from './src/components/DevPanel';
 import { installForegroundHandler } from './src/domain/raceNotifications';
 import { useLiveTelemetry } from './src/hooks/useLiveTelemetry';
+import { useRaceTrackLogger } from './src/hooks/useRaceTrackLogger';
 import { RootNavigator } from './src/navigation';
 import { seedMarksIfEmpty } from './src/stores/marksSeed';
 import { useCoursesStore } from './src/stores/useCoursesStore';
@@ -20,6 +21,7 @@ export default function App() {
   const refreshMarks = useMarksStore((s) => s.refresh);
   const hydrateCourses = useCoursesStore((s) => s.hydrate);
   useLiveTelemetry();
+  useRaceTrackLogger();
 
   useEffect(() => {
     installForegroundHandler();

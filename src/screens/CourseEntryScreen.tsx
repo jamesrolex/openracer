@@ -200,7 +200,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
     // inside the store will snap the exact gun time to the next whole
     // minute, the racer's classic move.
     const gun = new Date(Date.now() + 5 * 60_000);
-    useRaceStore.getState().arm(gun, id);
+    await useRaceStore.getState().arm(gun, id);
     useBoatStore.getState().setMode('race');
     navigation.navigate('RaceTimer');
   }

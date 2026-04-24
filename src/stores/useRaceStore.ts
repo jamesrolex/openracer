@@ -4,6 +4,10 @@
  * `src/domain/raceTimer.ts`. Persisted so a kill-and-reopen during
  * countdown resumes identically.
  *
+ * Also owns the current `activeSessionId` — a row in race_sessions
+ * that exists from arm-time until reset/abandon. The track logger
+ * reads this id to know where to write GPS fixes.
+ *
  * No interval ticking here — the screen drives its own rAF loop and
  * reads `makeSnapshot(sequenceStartTime, now)` each frame.
  */
@@ -11,17 +15,23 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import type { StartSequence } from '../types/race';
+import type { RaceState, StartSequence } from '../types/race';
 import { STANDARD_START_SEQUENCE } from '../types/race';
 import { syncToNextWholeMinute } from '../domain/raceTimer';
 
+import {
+  createRaceSession,
+  updateRaceSessionState,
+} from './raceSessionsRepo';
 import { sqliteStorage } from './sqliteStorage';
 
-export interface RaceState {
+export interface RaceStoreState {
   /** ISO 8601 UTC — the scheduled gun. Null = timer idle. */
   sequenceStartTime: string | null;
   /** Which course this arming is for; null = timer armed without a course. */
   armedCourseId: string | null;
+  /** Row id in race_sessions for the current arming, null when idle. */
+  activeSessionId: string | null;
   /** Sequence in effect for this arming. */
   sequence: StartSequence;
   /** General-recall count for analytics / UX. */
@@ -30,39 +40,47 @@ export interface RaceState {
 
 export interface RaceActions {
   /** Arm for a start at `gunAt` (rounded to the next whole minute). */
-  arm: (gunAt: Date, courseId: string | null) => void;
+  arm: (gunAt: Date, courseId: string | null) => Promise<string>;
   /** Sync: round the current armed start to the next whole minute. */
   syncToMinute: () => void;
   /** Shift the armed start by ±N minutes. */
   shiftMinutes: (deltaMinutes: number) => void;
   /** General recall: restart the sequence at now+5 min. */
   generalRecall: () => void;
-  /** Abandon the race. Clears timer. */
-  abandon: () => void;
-  /** Clear the timer without marking abandon (after race completes). */
+  /** Abandon the race. Marks session `abandoned`, clears timer. */
+  abandon: () => Promise<void>;
+  /** Finish cleanly (race completed). Marks session `finished`, clears. */
+  finish: () => Promise<void>;
+  /** Clear the timer without writing a final state (edge cases / tests). */
   reset: () => void;
+  /** Set the runtime state tag on the active session (starting / running). */
+  setActiveSessionState: (state: RaceState) => Promise<void>;
 }
 
-const initial: RaceState = {
+const initial: RaceStoreState = {
   sequenceStartTime: null,
   armedCourseId: null,
+  activeSessionId: null,
   sequence: STANDARD_START_SEQUENCE,
   recallCount: 0,
 };
 
-export const useRaceStore = create<RaceState & RaceActions>()(
+export const useRaceStore = create<RaceStoreState & RaceActions>()(
   persist(
     (set, get) => ({
       ...initial,
 
-      arm: (gunAt, courseId) => {
+      arm: async (gunAt, courseId) => {
         const start = syncToNextWholeMinute(gunAt);
+        const session = await createRaceSession(courseId, start);
         set({
           sequenceStartTime: start.toISOString(),
           armedCourseId: courseId,
+          activeSessionId: session.id,
           recallCount: 0,
           sequence: STANDARD_START_SEQUENCE,
         });
+        return session.id;
       },
 
       syncToMinute: () => {
@@ -80,7 +98,6 @@ export const useRaceStore = create<RaceState & RaceActions>()(
       },
 
       generalRecall: () => {
-        // Restart the sequence: new gun is five minutes from now, rounded.
         const newGun = syncToNextWholeMinute(new Date(Date.now() + 5 * 60_000));
         set((s) => ({
           sequenceStartTime: newGun.toISOString(),
@@ -88,15 +105,33 @@ export const useRaceStore = create<RaceState & RaceActions>()(
         }));
       },
 
-      abandon: () => set({ ...initial }),
+      abandon: async () => {
+        const id = get().activeSessionId;
+        if (id) await updateRaceSessionState(id, 'abandoned', new Date());
+        set({ ...initial });
+      },
+
+      finish: async () => {
+        const id = get().activeSessionId;
+        if (id) await updateRaceSessionState(id, 'finished', new Date());
+        set({ ...initial });
+      },
+
       reset: () => set({ ...initial }),
+
+      setActiveSessionState: async (state) => {
+        const id = get().activeSessionId;
+        if (!id) return;
+        await updateRaceSessionState(id, state);
+      },
     }),
     {
       name: 'openracer.race-timer',
-      storage: sqliteStorage<RaceState>(),
-      partialize: (state): RaceState => ({
+      storage: sqliteStorage<RaceStoreState>(),
+      partialize: (state): RaceStoreState => ({
         sequenceStartTime: state.sequenceStartTime,
         armedCourseId: state.armedCourseId,
+        activeSessionId: state.activeSessionId,
         sequence: state.sequence,
         recallCount: state.recallCount,
       }),

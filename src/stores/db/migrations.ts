@@ -99,10 +99,30 @@ const m0005_committee_trust: Migration = async (db) => {
   `);
 };
 
+/** v6 — race_track_points. 1Hz GPS samples during active race sessions. */
+const m0006_race_track_points: Migration = async (db) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS race_track_points (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL REFERENCES race_sessions(id) ON DELETE CASCADE,
+      recorded_at TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      sog_mps REAL,
+      cog_deg REAL,
+      heading_deg REAL,
+      accuracy_m REAL
+    );
+    CREATE INDEX IF NOT EXISTS idx_race_track_points_session
+      ON race_track_points (session_id, recorded_at);
+  `);
+};
+
 export const migrations: Migration[] = [
   m0001_kv_store,
   m0002_marks,
   m0003_courses,
   m0004_race_sessions,
   m0005_committee_trust,
+  m0006_race_track_points,
 ];
