@@ -9,6 +9,7 @@ import { DevPanel } from './src/components/DevPanel';
 import { useLiveTelemetry } from './src/hooks/useLiveTelemetry';
 import { RootNavigator } from './src/navigation';
 import { seedMarksIfEmpty } from './src/stores/marksSeed';
+import { useCoursesStore } from './src/stores/useCoursesStore';
 import { useMarksStore } from './src/stores/useMarksStore';
 import { useSettingsStore } from './src/stores/useSettingsStore';
 import tamaguiConfig from './tamagui.config';
@@ -16,14 +17,16 @@ import tamaguiConfig from './tamagui.config';
 export default function App() {
   const nightMode = useSettingsStore((state) => state.nightMode);
   const refreshMarks = useMarksStore((s) => s.refresh);
+  const hydrateCourses = useCoursesStore((s) => s.hydrate);
   useLiveTelemetry();
 
   useEffect(() => {
     void (async () => {
       await seedMarksIfEmpty();
       await refreshMarks();
+      await hydrateCourses();
     })();
-  }, [refreshMarks]);
+  }, [refreshMarks, hydrateCourses]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

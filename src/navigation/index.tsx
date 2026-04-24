@@ -1,15 +1,17 @@
 /**
- * Root navigator. A minimal native stack:
+ * Root navigator. A native stack:
  *
  *   Home → MarkLibrary → MarkEdit
+ *        → CourseEntry → MarkEdit
  *
- * Week 2 scope. Course entry, race timer, and settings stacks append here
- * in later weeks.
+ * Weeks 2-3 scope. Race timer and settings stacks append here in later
+ * weeks.
  */
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { CourseEntryScreen } from '../screens/CourseEntryScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MarkEditScreen } from '../screens/MarkEditScreen';
 import { MarkLibraryScreen } from '../screens/MarkLibraryScreen';
@@ -19,6 +21,7 @@ export type RootStackParamList = {
   MarkLibrary: undefined;
   /** `markId` present = edit; absent = create new. */
   MarkEdit: { markId?: string };
+  CourseEntry: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<
@@ -40,6 +43,7 @@ export function RootNavigator() {
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="MarkLibrary" component={MarkLibraryScreen} />
       <Stack.Screen name="MarkEdit" component={MarkEditScreen} />
+      <Stack.Screen name="CourseEntry" component={CourseEntryScreen} />
     </Stack.Navigator>
   );
 }

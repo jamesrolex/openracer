@@ -22,9 +22,11 @@ import { Text, View } from 'tamagui';
 
 import { BigNumber } from '../components/BigNumber';
 import { ConnectionBadge } from '../components/ConnectionBadge';
+import { CourseStrip } from '../components/CourseStrip';
 import { ModeToggle } from '../components/ModeToggle';
 import type { RootStackScreenProps } from '../navigation';
 import { useBoatStore } from '../stores/useBoatStore';
+import { useCoursesStore } from '../stores/useCoursesStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
 import { formatBearing, formatDistance, formatLatLon, metresPerSecondToKnots } from '../utils/format';
@@ -35,6 +37,8 @@ const PLACEHOLDER = '—';
 export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
   const nightMode = useSettingsStore((state) => state.nightMode);
   const theme = getTheme(nightMode ? 'night' : 'day');
+
+  const draft = useCoursesStore((state) => state.activeDraft);
 
   const position = useBoatStore((state) => state.position);
   const sog = useBoatStore((state) => state.sog);
@@ -77,11 +81,49 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
           flexDirection="row"
           justifyContent="space-between"
           alignItems="center"
-          marginBottom={theme.space.lg}
+          marginBottom={theme.space.md}
         >
           <ConnectionBadge mode={connectivity} variant={variant} />
           <ModeToggle mode={mode} onChange={setMode} variant={variant} />
         </View>
+
+        {draft ? (
+          <View marginBottom={theme.space.md}>
+            <CourseStrip
+              course={draft}
+              variant={variant}
+              onPress={() => navigation.navigate('CourseEntry')}
+            />
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => navigation.navigate('CourseEntry')}
+            hitSlop={4}
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.7 : 1,
+              marginBottom: theme.space.md,
+            })}
+            accessibilityLabel="Build course"
+          >
+            <View
+              paddingVertical={theme.space.sm}
+              paddingHorizontal={theme.space.md}
+              borderRadius={theme.radius.lg}
+              borderWidth={1}
+              borderColor={theme.accent}
+              backgroundColor="transparent"
+              alignItems="center"
+            >
+              <Text
+                color={theme.accent}
+                fontSize={theme.type.body.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+              >
+                Build course →
+              </Text>
+            </View>
+          </Pressable>
+        )}
 
         <View flex={1} justifyContent="space-evenly">
           <View flexDirection="row">
