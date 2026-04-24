@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input, Text, View } from 'tamagui';
 
 import { MarkPickerSheet } from '../components/MarkPickerSheet';
+import { defaultValidityFor } from '../domain/markLifecycle';
 import {
   COURSE_TEMPLATES,
   appendRoundingLeg,
@@ -32,7 +33,7 @@ import { useMarksStore } from '../stores/useMarksStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
 import type { CourseTemplateId, Leg } from '../types/course';
-import type { Mark } from '../types/mark';
+import type { Mark, MarkInput } from '../types/mark';
 
 export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEntry'>) {
   const nightMode = useSettingsStore((state) => state.nightMode);
@@ -42,6 +43,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   const position = useBoatStore((s) => s.position);
   const marks = useMarksStore((s) => s.marks);
   const refreshMarks = useMarksStore((s) => s.refresh);
+  const createMark = useMarksStore((s) => s.create);
 
   const draft = useCoursesStore((s) => s.activeDraft);
   const startDraft = useCoursesStore((s) => s.startDraft);
@@ -95,6 +97,36 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
       await ensureDraft();
       setPickerForLeg(legId);
     })();
+  }
+
+  async function handleDropAtGps() {
+    if (!pickerForLeg || !position) return;
+    const now = new Date();
+    const validity = defaultValidityFor('single-race-temporary', now);
+    const stamp = `${now.getUTCHours().toString().padStart(2, '0')}:${now
+      .getUTCMinutes()
+      .toString()
+      .padStart(2, '0')}`;
+    const input: MarkInput = {
+      name: `Dropped ${stamp}`,
+      latitude: position.latitude,
+      longitude: position.longitude,
+      tier: 'single-race-temporary',
+      source: 'gps-drop',
+      icon: 'custom',
+      shape: 'unknown',
+      validFrom: validity.validFrom,
+      validUntil: validity.validUntil,
+      owner: 'Me',
+    };
+    const created = await createMark(input);
+    await handlePickMark(created);
+  }
+
+  function handleBearingAndDistance() {
+    if (!pickerForLeg) return;
+    setPickerForLeg(null);
+    navigation.navigate('MarkBearing', { legId: pickerForLeg });
   }
 
   async function handlePickMark(mark: Mark) {
@@ -429,6 +461,8 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
           setPickerForLeg(null);
           navigation.navigate('MarkEdit', {});
         }}
+        onDropAtGps={handleDropAtGps}
+        onBearingAndDistance={handleBearingAndDistance}
         onCancel={() => setPickerForLeg(null)}
         variant={variant}
       />
