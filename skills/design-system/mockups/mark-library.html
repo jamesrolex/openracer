@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>OpenRacer — Mark Library mockup</title>
+<style>
+  :root {
+    --brand-primary: #1F4E79;
+    --brand-primary-dim: #2B5F8B;
+    --status-offline: #595959;
+    --status-patchy: #854F0B;
+    --status-constant: #534AB7;
+    --status-success: #3B6D11;
+    --status-warning: #A8450B;
+    --status-danger: #B91C1C;
+    --neutral-bg: #FFFFFF;
+    --neutral-surface: #F8F9FB;
+    --neutral-border: #E4E7EC;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #E5E7EB;
+    color: var(--text-primary);
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .frame {
+    max-width: 390px;
+    margin: 0 auto;
+    background: var(--neutral-bg);
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    border: 8px solid #111;
+  }
+
+  /* Top bar */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--neutral-border);
+  }
+
+  .back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--brand-primary);
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .title {
+    font-weight: 700;
+    font-size: 17px;
+  }
+
+  .add-btn {
+    color: var(--brand-primary);
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  /* Search */
+  .search {
+    padding: 16px 20px 12px;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--neutral-surface);
+    border: 1px solid var(--neutral-border);
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text-primary);
+  }
+
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding: 8px 20px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 8px 14px;
+    background: var(--neutral-surface);
+    border: 1px solid var(--neutral-border);
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .tab.active {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: white;
+  }
+
+  .tab-count {
+    margin-left: 6px;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+
+  /* List */
+  .list {
+    padding: 4px 20px 24px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 16px 0 8px;
+  }
+
+  .mark-card {
+    padding: 14px 16px;
+    background: var(--neutral-bg);
+    border: 1px solid var(--neutral-border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    cursor: pointer;
+    transition: background 150ms;
+  }
+
+  .mark-card:hover {
+    background: var(--neutral-surface);
+  }
+
+  .mark-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--brand-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .mark-icon.seasonal { background: var(--brand-primary); }
+  .mark-icon.permanent { background: var(--status-success); }
+  .mark-icon.recent { background: var(--status-warning); }
+  .mark-icon.temporary { background: var(--status-offline); }
+
+  .mark-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mark-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .mark-coords {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+
+  .mark-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tier-badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .tier-badge.seasonal {
+    background: rgba(31, 78, 121, 0.1);
+    color: var(--brand-primary);
+  }
+  .tier-badge.permanent {
+    background: rgba(59, 109, 17, 0.1);
+    color: var(--status-success);
+  }
+  .tier-badge.recent {
+    background: rgba(168, 69, 11, 0.1);
+    color: var(--status-warning);
+  }
+  .tier-badge.temporary {
+    background: rgba(89, 89, 89, 0.1);
+    color: var(--status-offline);
+  }
+
+  .mark-since {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Status bar (phone) */
+  .phone-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 24px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .caption {
+    max-width: 390px;
+    margin: 20px auto 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  h1 {
+    max-width: 390px;
+    margin: 0 auto 20px;
+    text-align: center;
+    font-size: 22px;
+    color: var(--text-primary);
+  }
+</style>
+</head>
+<body>
+
+<h1>Mark Library — design reference</h1>
+
+<div class="frame">
+  <div class="phone-status">
+    <span>09:42</span>
+    <span>🌤 🔋</span>
+  </div>
+
+  <div class="topbar">
+    <span class="back">← Back</span>
+    <span class="title">Mark Library</span>
+    <span class="add-btn">+ Add</span>
+  </div>
+
+  <div class="search">
+    <input class="search-input" placeholder="Search marks…">
+  </div>
+
+  <div class="tabs">
+    <div class="tab active">All <span class="tab-count">24</span></div>
+    <div class="tab">Seasonal <span class="tab-count">8</span></div>
+    <div class="tab">Permanent <span class="tab-count">12</span></div>
+    <div class="tab">Recent <span class="tab-count">3</span></div>
+    <div class="tab">Temp <span class="tab-count">1</span></div>
+  </div>
+
+  <div class="list">
+
+    <div class="section-label">Club seasonal · Abersoch SC</div>
+
+    <div class="mark-card">
+      <div class="mark-icon seasonal">G</div>
+      <div class="mark-body">
+        <div class="mark-name">Green Buoy (West)</div>
+        <div class="mark-coords">52° 49.230′N · 004° 30.150′W</div>
+        <div class="mark-meta">
+          <span class="tier-badge seasonal">Seasonal</span>
+          <span class="mark-since">Laid 12 April</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mark-card">
+      <div class="mark-icon seasonal">R</div>
+      <div class="mark-body">
+        <div class="mark-name">Red Buoy (East)</div>
+        <div class="mark-coords">52° 49.180′N · 004° 29.420′W</div>
+        <div class="mark-meta">
+          <span class="tier-badge seasonal">Seasonal</span>
+          <span class="mark-since">Used 2 days ago</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mark-card">
+      <div class="mark-icon seasonal">Y</div>
+      <div class="mark-body">
+        <div class="mark-name">Yellow Offshore</div>
+        <div class="mark-coords">52° 48.910′N · 004° 30.840′W</div>
+        <div class="mark-meta">
+          <span class="tier-badge seasonal">Seasonal</span>
+          <span class="mark-since">Used last week</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Chart permanent · OpenSeaMap</div>
+
+    <div class="mark-card">
+      <div class="mark-icon permanent">N</div>
+      <div class="mark-body">
+        <div class="mark-name">North Cardinal — Carreg y Trai</div>
+        <div class="mark-coords">52° 48.640′N · 004° 31.200′W</div>
+        <div class="mark-meta">
+          <span class="tier-badge permanent">Permanent</span>
+          <span class="mark-since">Chart marker</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mark-card">
+      <div class="mark-icon permanent">⚓</div>
+      <div class="mark-body">
+        <div class="mark-name">Abersoch Harbour Entry</div>
+        <div class="mark-coords">52° 49.420′N · 004° 29.970′W</div>
+        <div class="mark-meta">
+          <span class="tier-badge permanent">Permanent</span>
+          <span class="mark-since">Chart marker</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Race-day recent · Last 14 days</div>
+
+    <div class="mark-card">
+      <div class="mark-icon recent">C</div>
+      <div class="mark-body">
+        <div class="mark-name">Committee Boat</div>
+        <div class="mark-coords">52° 49.100′N · 004° 30.050′W</div>
+        <div class="mark-meta">
+          <span class="tier-badge recent">Recent</span>
+          <span class="mark-since">3 days ago</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Single-race · This race only</div>
+
+    <div class="mark-card">
+      <div class="mark-icon temporary">T</div>
+      <div class="mark-body">
+        <div class="mark-name">Custom windward mark</div>
+        <div class="mark-coords">52° 48.820′N · 004° 30.510′W</div>
+        <div class="mark-meta">
+          <span class="tier-badge temporary">Temp</span>
+          <span class="mark-since">Auto-deletes after race</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<p class="caption">Design reference — not an interactive prototype.<br>
+Shows typography, spacing, tier colour coding, card patterns, tab navigation.</p>
+
+</body>
+</html>
