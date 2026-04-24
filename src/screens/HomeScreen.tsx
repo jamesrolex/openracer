@@ -112,14 +112,27 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
           <Pressable
             onPress={() => navigation.navigate('MarkLibrary')}
             accessibilityLabel="Open mark library"
+            hitSlop={8}
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
-            <Text
-              color={theme.accent}
-              fontSize={theme.type.caption.size}
-              fontWeight={theme.type.bodySemi.weight as '600'}
+            <View
+              minHeight={44}
+              paddingVertical={theme.space.sm}
+              paddingHorizontal={theme.space.md}
+              borderRadius={theme.radius.full}
+              backgroundColor={theme.accent}
+              flexDirection="row"
+              alignItems="center"
             >
-              Marks →
-            </Text>
+              <Text
+                color={theme.bg}
+                fontSize={theme.type.bodySemi.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+                lineHeight={theme.type.bodySemi.lineHeight}
+              >
+                Marks →
+              </Text>
+            </View>
           </Pressable>
         </View>
 

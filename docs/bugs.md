@@ -32,6 +32,7 @@ issue with the `feature` label.
 | B-007 | LAT/LON show signed decimals without hemisphere letters | 0 | medium | fixed | HomeScreen now uses `formatLatLon(..., 'decimal')` — e.g. `52.8226° N`, `4.5097° W` |
 | B-008 | LON still wraps on iPhone width because `formatLatLon(decimal)` left-pads to 3 digits (`004.5097° W`) | 0 | low | fixed | Decimal format no longer pads the whole-degree part — padding stays on DMM/DMS per marine convention but chart-plotter-style decimal has no padding |
 | B-009 | Tamagui `createTamagui` crashes on boot: zIndex tokens use numeric keys (`$0..$3`) while other scales use `$xxs..$huge` | 1 | high | fixed | zIndex keys realigned to the shared scale (`xxs..huge`); Tamagui 1.x enforces symmetric token keys at runtime, not at typecheck time |
+| B-010 | "Marks →" link on HomeScreen is hard to press (12 pt text, no background, ~15 pt tap target) | 1 | medium | fixed | Replaced bare text link with a pill-shaped button using accent fill and 44 pt minimum tap target per HIG |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).
