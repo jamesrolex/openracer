@@ -18,7 +18,19 @@ Three tiers share one codebase:
 
 ## Status
 
-🚧 **Phase 0 — Skeleton & offline foundations.** Early scaffolding, not yet usable.
+🚣 **Phase 1 — Course entry hero + race timer.** Functional end-to-end alpha in Expo Go.
+
+What's live (works today, no EAS build needed):
+- Mark library with seeded Abersoch fixtures, tiered expiry, confidence scoring
+- 5 of 7 course-entry methods: library pick, committee push (QR-based ECDSA-signed bundles), drop-at-GPS, bearing + distance, point-at-mark (compass + triangulation)
+- Race timer: time-anchored state machine, monster-size countdown with band colours, locked-screen notifications at T-5/T-4/T-1/T-0, haptics, general-recall
+- Start-line readout: signed distance-to-line, time-to-line, OCS warning
+- Committee identity + trust list + signed-bundle cryptography
+- Settings: units, night mode, committee admin
+
+What's Phase B (needs EAS dev build + $99 Apple Developer Program):
+- Chart methods 5-6 (tap chart, tap seamark) — awaiting MapLibre
+- BLE + mDNS committee push (QR is the Phase A stand-in)
 
 See `docs/roadmap.md` for the full 11-phase, 60-week plan to v1 community launch, and the post-v1 cruising platform vision.
 
@@ -26,9 +38,12 @@ See `docs/roadmap.md` for the full 11-phase, 60-week plan to v1 community launch
 
 - **`docs/spec-summary.md`** — condensed product specification
 - **`docs/openracer_spec_v0.6.docx`** — full spec, the bible
-- **`docs/phase-0-plan.md`** — what we're building right now
+- **`docs/phase-0-plan.md`** — what was built in Phase 0 (reference)
+- **`docs/phase-1-plan.md`** — what's building now, includes retro + parking lot
+- **`docs/dev-build-setup.md`** — how to flip to EAS dev build for Phase B
 - **`docs/decisions.md`** — locked architectural decisions
 - **`docs/roadmap.md`** — all 11 phases + future platform vision
+- **`docs/bugs.md`** — bug log with workflow
 
 ## Running locally
 
@@ -41,12 +56,14 @@ npm run ios       # builds + opens in iOS simulator (Mac only)
 npm run android   # builds + opens in Android emulator
 ```
 
-### Verifying the Phase 0 build
+### Verifying the build
 
 ```bash
 npm run typecheck   # TypeScript strict, no errors expected
-npm test            # Jest: 39 tests, 100% branch coverage on utils
+npm test            # Jest: 172+ tests, 100% branch coverage on utils
 npm run lint        # ESLint (expo preset)
+npm run doctor      # expo-doctor — 17/17 dependency-health checks
+npm run audit       # all four in sequence — pre-push gate
 ```
 
 ### The aeroplane-mode test
