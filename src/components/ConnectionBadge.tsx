@@ -19,7 +19,7 @@ export interface ConnectionBadgeProps {
 const LABEL: Record<ConnectivityMode, string> = {
   offline: 'Offline',
   patchy: 'Patchy',
-  constant: 'Starlink',
+  constant: 'Online',
 };
 
 export function ConnectionBadge({ mode, variant = 'day' }: ConnectionBadgeProps) {

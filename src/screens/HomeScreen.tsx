@@ -24,13 +24,13 @@ import { ModeToggle } from '../components/ModeToggle';
 import { useBoatStore } from '../stores/useBoatStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
-import { formatBearing, formatDistance, formatLatLon, metresPerSecondToKnots } from '../utils/format';
+import { formatBearing, formatDistance, metresPerSecondToKnots } from '../utils/format';
 
 const STALE_AFTER_MS = 3000;
+const PLACEHOLDER = '—';
 
 export function HomeScreen() {
   const nightMode = useSettingsStore((state) => state.nightMode);
-  const coordFormat = useSettingsStore((state) => state.coordFormat);
   const theme = getTheme(nightMode ? 'night' : 'day');
 
   const position = useBoatStore((state) => state.position);
@@ -47,16 +47,21 @@ export function HomeScreen() {
   const lastUpdateMs = lastUpdate ? new Date(lastUpdate).getTime() : null;
   const stale = lastUpdateMs === null ? true : now - lastUpdateMs > STALE_AFTER_MS;
 
-  const sogDisplay = sog === null ? '—' : metresPerSecondToKnots(sog).toFixed(1);
-  const cogDisplay = cog === null ? '—' : formatBearing(cog).replace('°', '');
-  const coordDisplay =
-    position === null
-      ? { lat: '—', lon: '—' }
-      : splitFormattedLatLon(formatLatLon(position.latitude, position.longitude, coordFormat));
+  const sogDisplay = sog === null ? PLACEHOLDER : metresPerSecondToKnots(sog).toFixed(1);
+  const cogDisplay = cog === null ? PLACEHOLDER : formatBearing(cog).replace('°', '');
+  // Phase 0 plan calls for decimal coords on HomeScreen. User's coord-format
+  // preference governs other screens (Mark library, course entry, etc.).
+  const latDisplay = position === null ? PLACEHOLDER : position.latitude.toFixed(4);
+  const lonDisplay = position === null ? PLACEHOLDER : position.longitude.toFixed(4);
 
-  const accuracyDisplay = accuracy === null ? '—' : `GPS ${formatDistance(accuracy, 'm')}`;
+  const accuracyDisplay = accuracy === null ? PLACEHOLDER : `GPS ${formatDistance(accuracy, 'm')}`;
   const freshnessDisplay =
     lastUpdateMs === null ? 'waiting for fix' : `updated ${describeAge(now - lastUpdateMs)}`;
+
+  const sogEmphasis = sog === null ? 'muted' : 'primary';
+  const cogEmphasis = cog === null ? 'muted' : 'primary';
+  const latEmphasis = position === null ? 'muted' : 'secondary';
+  const lonEmphasis = position === null ? 'muted' : 'secondary';
 
   const styles = StyleSheet.create({
     safe: {
@@ -112,12 +117,12 @@ export function HomeScreen() {
 
         <View style={styles.grid}>
           <View style={styles.row}>
-            <BigNumber label="SOG" value={sogDisplay} unit="kn" emphasis="primary" stale={stale} variant={variant} />
-            <BigNumber label="COG" value={cogDisplay} unit="°" emphasis="primary" stale={stale} variant={variant} />
+            <BigNumber label="SOG" value={sogDisplay} unit="kn" emphasis={sogEmphasis} stale={stale} variant={variant} />
+            <BigNumber label="COG" value={cogDisplay} unit="°" emphasis={cogEmphasis} stale={stale} variant={variant} />
           </View>
           <View style={styles.row}>
-            <BigNumber label="LAT" value={coordDisplay.lat} emphasis="secondary" stale={stale} variant={variant} />
-            <BigNumber label="LON" value={coordDisplay.lon} emphasis="secondary" stale={stale} variant={variant} />
+            <BigNumber label="LAT" value={latDisplay} unit="°" emphasis={latEmphasis} stale={stale} variant={variant} />
+            <BigNumber label="LON" value={lonDisplay} unit="°" emphasis={lonEmphasis} stale={stale} variant={variant} />
           </View>
         </View>
 
@@ -134,11 +139,6 @@ export function HomeScreen() {
       </View>
     </SafeAreaView>
   );
-}
-
-function splitFormattedLatLon(combined: string): { lat: string; lon: string } {
-  const [lat, lon] = combined.split(', ');
-  return { lat: lat ?? '—', lon: lon ?? '—' };
 }
 
 function describeAge(ms: number): string {

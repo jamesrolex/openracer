@@ -7,6 +7,7 @@
  * poller (those belong to useLiveTelemetry, called once at the root).
  */
 
+import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -25,6 +26,7 @@ export interface DevPanelProps {
 
 export function DevPanel({ extra }: DevPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const nightMode = useSettingsStore((state) => state.nightMode);
   const theme = getTheme(nightMode ? 'night' : 'day');
 
@@ -48,8 +50,8 @@ export function DevPanel({ extra }: DevPanelProps) {
   const styles = StyleSheet.create({
     pill: {
       position: 'absolute',
-      top: 60,
-      left: 16,
+      bottom: 32,
+      right: 16,
       backgroundColor: theme.surface,
       borderColor: theme.border,
       borderWidth: 1,
@@ -57,7 +59,16 @@ export function DevPanel({ extra }: DevPanelProps) {
       paddingHorizontal: theme.space.sm,
       paddingVertical: theme.space.xs,
       zIndex: 9999,
+      flexDirection: 'row',
+      alignItems: 'center',
       ...theme.elevation.card,
+    },
+    pillDot: {
+      width: 6,
+      height: 6,
+      borderRadius: theme.radius.full,
+      backgroundColor: boat.permissionStatus === 'granted' ? theme.status.success : theme.status.warning,
+      marginRight: theme.space.xs,
     },
     pillText: {
       color: theme.text.secondary,
@@ -91,6 +102,22 @@ export function DevPanel({ extra }: DevPanelProps) {
       fontSize: theme.type.h3.size,
       fontWeight: theme.type.h3.weight as '600',
     },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    copyButton: {
+      paddingHorizontal: theme.space.sm,
+      paddingVertical: theme.space.xs,
+      borderRadius: theme.radius.md,
+      backgroundColor: copied ? theme.status.success : theme.accent,
+      marginRight: theme.space.sm,
+    },
+    copyButtonText: {
+      color: theme.bg,
+      fontSize: theme.type.caption.size,
+      fontWeight: theme.type.bodySemi.weight as '600',
+    },
     headerClose: {
       color: theme.text.muted,
       fontSize: theme.type.body.size,
@@ -120,20 +147,35 @@ export function DevPanel({ extra }: DevPanelProps) {
   if (!expanded) {
     return (
       <Pressable onPress={() => setExpanded(true)} style={styles.pill} accessibilityLabel="Open dev panel">
-        <Text style={styles.pillText}>
-          DEV · {boat.permissionStatus} · {boat.connectivity}
-        </Text>
+        <View style={styles.pillDot} />
+        <Text style={styles.pillText}>DEV</Text>
       </Pressable>
     );
+  }
+
+  async function copyDiagnostics() {
+    const payload = rows.map((r) => `${r.label}: ${r.value}`).join('\n');
+    await Clipboard.setStringAsync(payload);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   }
 
   return (
     <View style={styles.sheet}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dev diagnostics</Text>
-        <Pressable onPress={() => setExpanded(false)} accessibilityLabel="Close dev panel">
-          <Text style={styles.headerClose}>✕</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            onPress={copyDiagnostics}
+            style={styles.copyButton}
+            accessibilityLabel="Copy diagnostics to clipboard"
+          >
+            <Text style={styles.copyButtonText}>{copied ? 'Copied' : 'Copy'}</Text>
+          </Pressable>
+          <Pressable onPress={() => setExpanded(false)} accessibilityLabel="Close dev panel">
+            <Text style={styles.headerClose}>✕</Text>
+          </Pressable>
+        </View>
       </View>
       <ScrollView>
         {rows.map((row) => (

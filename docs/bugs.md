@@ -24,6 +24,11 @@ issue with the `feature` label.
 | ID | Title | Phase | Severity | Status | Resolution |
 |---|---|---|---|---|---|
 | B-001 | SOG / COG display garbage when stationary (iOS -1 sentinel) | 0 | medium | fixed | Negative `coords.speed` / `coords.heading` now treated as unavailable (null) |
+| B-002 | DEV pill collides with ConnectionBadge in top-left | 0 | low | fixed | Pill moved to bottom-right, trimmed to just `DEV` label |
+| B-003 | Monster-size em-dash placeholder reads as a loading bar | 0 | medium | fixed | Placeholder values render at `muted` emphasis (h2 size) so they read as "no data" |
+| B-004 | LAT/LON DMM format wraps awkwardly on iPhone width; also scope drift from Phase 0 plan | 0 | medium | fixed | HomeScreen now uses decimal format (per Phase 0 plan); user-pref `coordFormat` reserved for future screens |
+| B-005 | ConnectionBadge says "Starlink" for any constant connection (confusing on home WiFi) | 0 | low | fixed | Label changed from "Starlink" to "Online" — neutral, accurate for any constant source |
+| B-006 | Screenshot → AirDrop → paste loop for diagnostics is slow | 0 | medium | fixed | DevPanel gained a "Copy" button that puts the rows on the clipboard via `expo-clipboard` |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).
