@@ -8,7 +8,8 @@
 |---|---|---|---|---|
 | **0** | 1-2 | Skeleton & offline foundations | Expo app, live GPS, aeroplane-mode works | Expo Go |
 | **1** | 3-10 | Course entry hero + race timer + start line | Full race in 3 min course-to-start, offline | Expo Go → EAS dev build (BLE committee push) |
-| **2** | 11-14 | Chart upload, polars, VMG, track logging | Full race start-to-finish logged offline | EAS dev build (MapLibre) |
+| **1.5** | 11-12 | Race-day polish: gun-sync, AP/X states, favoured-end chip, GPX export | RC can run a real Wednesday night with postponement + recall, sailor exports the track | Expo Go |
+| **2** | 13-16 | Chart upload, polars, VMG, track logging | Full race start-to-finish logged offline | EAS dev build (MapLibre) |
 | **3** | 15-18 | Navigation mode v1 + tidal + weather | MOB, anchor, waypoint, route work offline | EAS dev build |
 | **4** | 19-24 | AI debriefs + gust-aware nudges | 30s online / 3min offline debrief; live gust alerts | EAS dev build |
 | **5** | 25-28 | Natural-language Q&A | "Why did we lose?" works online + offline | EAS dev build |
@@ -25,6 +26,7 @@ Each phase has explicit exit criteria before moving on:
 
 - **Phase 0:** GPS in aeroplane mode on iOS + Android, tests pass, typecheck clean
 - **Phase 1:** VHF-announcement-to-start-timer-armed under 3 min, all offline
+- **Phase 1.5:** Real Wednesday-night race run by RC via the app — postponement + general recall handled correctly, GPX track exports cleanly to RaceQs
 - **Phase 2:** 2-hour race logged start-to-finish with no network
 - **Phase 3:** MOB + anchor + waypoint + route functional offline
 - **Phase 4:** Gust detection 90%+ accurate on recorded sessions; cloud debrief under 30s; **Phase-4 device spike passes** (see `docs/decisions.md` "Local AI" section)
