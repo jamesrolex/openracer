@@ -89,9 +89,9 @@ describe('formatLatLon', () => {
     );
   });
 
-  it('formats decimal with hemisphere letters and 4 decimals', () => {
+  it('formats decimal with hemisphere letters and 4 decimals (no zero-pad)', () => {
     expect(formatLatLon(abersoch.lat, abersoch.lon, 'decimal')).toBe(
-      '52.8205° N, 004.5025° W',
+      '52.8205° N, 4.5025° W',
     );
   });
 
@@ -109,7 +109,7 @@ describe('formatLatLon', () => {
 
   it('handles the equator and prime meridian (zero values)', () => {
     expect(formatLatLon(0, 0, 'dmm')).toBe("00° 00.000' N, 000° 00.000' E");
-    expect(formatLatLon(0, 0, 'decimal')).toBe('00.0000° N, 000.0000° E');
+    expect(formatLatLon(0, 0, 'decimal')).toBe('0.0000° N, 0.0000° E');
     expect(formatLatLon(0, 0, 'dms')).toBe('00° 00\' 00.0" N, 000° 00\' 00.0" E');
   });
 
@@ -119,7 +119,7 @@ describe('formatLatLon', () => {
   });
 
   it('handles longitude near the antimeridian', () => {
-    expect(formatLatLon(0, 179.99, 'decimal')).toBe('00.0000° N, 179.9900° E');
-    expect(formatLatLon(0, -179.99, 'decimal')).toBe('00.0000° N, 179.9900° W');
+    expect(formatLatLon(0, 179.99, 'decimal')).toBe('0.0000° N, 179.9900° E');
+    expect(formatLatLon(0, -179.99, 'decimal')).toBe('0.0000° N, 179.9900° W');
   });
 });

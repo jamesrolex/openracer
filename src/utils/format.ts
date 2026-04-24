@@ -72,10 +72,10 @@ export function formatLatLon(
 
 function formatDecimalComponent(value: number, axis: 'lat' | 'lon'): string {
   const hemisphere = hemisphereLetter(value, axis);
-  const abs = Math.abs(value).toFixed(4);
-  const pad = axis === 'lat' ? 2 : 3;
-  const [whole, frac] = abs.split('.') as [string, string];
-  return `${whole.padStart(pad, '0')}.${frac}° ${hemisphere}`;
+  // Decimal format mimics chart-plotter display: no zero-padding on the
+  // whole-degree part. DMM and DMS retain the marine 2- / 3-digit padding
+  // convention since that's what course papers and chart overlays expect.
+  return `${Math.abs(value).toFixed(4)}° ${hemisphere}`;
 }
 
 function formatDMMComponent(value: number, axis: 'lat' | 'lon'): string {
