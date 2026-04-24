@@ -46,6 +46,8 @@ export interface MarkPickerSheetProps {
   /** Optional — bearing+distance from a reference mark. Hidden if caller
    *  doesn't supply a handler. */
   onBearingAndDistance?: () => void;
+  /** Optional — point-at-mark triangulation. Hidden if no handler. */
+  onPointAtMark?: () => void;
   onCancel: () => void;
   variant?: 'day' | 'night';
 }
@@ -60,6 +62,7 @@ export function MarkPickerSheet({
   onAddNew,
   onDropAtGps,
   onBearingAndDistance,
+  onPointAtMark,
   onCancel,
   variant = 'day',
 }: MarkPickerSheetProps) {
@@ -140,37 +143,55 @@ export function MarkPickerSheet({
             marginBottom={theme.space.sm}
           />
 
-          {(onDropAtGps && fromPosition) || onBearingAndDistance ? (
-            <View flexDirection="row" marginBottom={theme.space.sm}>
-              {onDropAtGps && fromPosition ? (
-                <Pressable
-                  onPress={() => void onDropAtGps()}
-                  hitSlop={8}
-                  style={{ flex: 1, marginRight: theme.space.sm }}
-                >
-                  <View
-                    paddingVertical={theme.space.sm}
-                    paddingHorizontal={theme.space.md}
-                    borderRadius={theme.radius.lg}
-                    backgroundColor={theme.status.success}
-                    alignItems="center"
+          {(onDropAtGps && fromPosition) || onBearingAndDistance || onPointAtMark ? (
+            <View marginBottom={theme.space.sm}>
+              <View flexDirection="row" marginBottom={theme.space.xs}>
+                {onDropAtGps && fromPosition ? (
+                  <Pressable
+                    onPress={() => void onDropAtGps()}
+                    hitSlop={8}
+                    style={{ flex: 1, marginRight: theme.space.sm }}
                   >
-                    <Text
-                      color={theme.bg}
-                      fontSize={theme.type.body.size}
-                      fontWeight={theme.type.bodySemi.weight as '600'}
+                    <View
+                      paddingVertical={theme.space.sm}
+                      paddingHorizontal={theme.space.md}
+                      borderRadius={theme.radius.lg}
+                      backgroundColor={theme.status.success}
+                      alignItems="center"
                     >
-                      📍 Drop at GPS
-                    </Text>
-                  </View>
-                </Pressable>
-              ) : null}
-              {onBearingAndDistance ? (
-                <Pressable
-                  onPress={onBearingAndDistance}
-                  hitSlop={8}
-                  style={{ flex: 1 }}
-                >
+                      <Text
+                        color={theme.bg}
+                        fontSize={theme.type.body.size}
+                        fontWeight={theme.type.bodySemi.weight as '600'}
+                      >
+                        📍 Drop at GPS
+                      </Text>
+                    </View>
+                  </Pressable>
+                ) : null}
+                {onBearingAndDistance ? (
+                  <Pressable onPress={onBearingAndDistance} hitSlop={8} style={{ flex: 1 }}>
+                    <View
+                      paddingVertical={theme.space.sm}
+                      paddingHorizontal={theme.space.md}
+                      borderRadius={theme.radius.lg}
+                      borderColor={theme.accent}
+                      borderWidth={1}
+                      alignItems="center"
+                    >
+                      <Text
+                        color={theme.accent}
+                        fontSize={theme.type.body.size}
+                        fontWeight={theme.type.bodySemi.weight as '600'}
+                      >
+                        📐 Bearing + dist
+                      </Text>
+                    </View>
+                  </Pressable>
+                ) : null}
+              </View>
+              {onPointAtMark ? (
+                <Pressable onPress={onPointAtMark} hitSlop={8}>
                   <View
                     paddingVertical={theme.space.sm}
                     paddingHorizontal={theme.space.md}
@@ -184,7 +205,7 @@ export function MarkPickerSheet({
                       fontSize={theme.type.body.size}
                       fontWeight={theme.type.bodySemi.weight as '600'}
                     >
-                      📐 Bearing + distance
+                      🧭 Point at mark (compass)
                     </Text>
                   </View>
                 </Pressable>

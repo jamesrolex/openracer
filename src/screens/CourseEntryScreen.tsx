@@ -130,6 +130,12 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
     navigation.navigate('MarkBearing', { legId: pickerForLeg });
   }
 
+  function handlePointAtMark() {
+    if (!pickerForLeg) return;
+    setPickerForLeg(null);
+    navigation.navigate('MarkPointAt', { legId: pickerForLeg });
+  }
+
   async function handlePickMark(mark: Mark) {
     if (!pickerForLeg) return;
     const currentLeg = legs.find((l) => l.id === pickerForLeg);
@@ -467,6 +473,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
         }}
         onDropAtGps={handleDropAtGps}
         onBearingAndDistance={handleBearingAndDistance}
+        onPointAtMark={handlePointAtMark}
         onCancel={() => setPickerForLeg(null)}
         variant={variant}
       />

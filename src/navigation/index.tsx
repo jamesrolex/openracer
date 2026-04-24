@@ -17,6 +17,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { MarkBearingScreen } from '../screens/MarkBearingScreen';
 import { MarkEditScreen } from '../screens/MarkEditScreen';
 import { MarkLibraryScreen } from '../screens/MarkLibraryScreen';
+import { MarkPointAtScreen } from '../screens/MarkPointAtScreen';
 import { RaceTimerScreen } from '../screens/RaceTimerScreen';
 import { ScanCoursePushScreen } from '../screens/ScanCoursePushScreen';
 import { ShareCourseScreen } from '../screens/ShareCourseScreen';
@@ -30,6 +31,8 @@ export type RootStackParamList = {
   CourseEntry: undefined;
   /** Open the bearing + distance flow; computed mark drops into `legId` on save. */
   MarkBearing: { legId: string };
+  /** Point-at-mark triangulation flow; result drops into `legId`. */
+  MarkPointAt: { legId: string };
   CommitteeIdentity: undefined;
   ShareCourse: undefined;
   ScanCoursePush: undefined;
@@ -58,6 +61,7 @@ export function RootNavigator() {
       <Stack.Screen name="MarkEdit" component={MarkEditScreen} />
       <Stack.Screen name="CourseEntry" component={CourseEntryScreen} />
       <Stack.Screen name="MarkBearing" component={MarkBearingScreen} />
+      <Stack.Screen name="MarkPointAt" component={MarkPointAtScreen} />
       <Stack.Screen name="CommitteeIdentity" component={CommitteeIdentityScreen} />
       <Stack.Screen name="ShareCourse" component={ShareCourseScreen} />
       <Stack.Screen name="ScanCoursePush" component={ScanCoursePushScreen} />
