@@ -30,6 +30,36 @@ See `docs/roadmap.md` for the full 11-phase, 60-week plan to v1 community launch
 - **`docs/decisions.md`** — locked architectural decisions
 - **`docs/roadmap.md`** — all 11 phases + future platform vision
 
+## Running locally
+
+**Prerequisites:** Node 20+ (we build on Node 24), Xcode (iOS simulator) or Android Studio (Android emulator), or the Expo Go app on a physical phone.
+
+```bash
+npm install       # first time only
+npm start         # starts Metro bundler — scan QR with Expo Go, or press i/a
+npm run ios       # builds + opens in iOS simulator (Mac only)
+npm run android   # builds + opens in Android emulator
+```
+
+### Verifying the Phase 0 build
+
+```bash
+npm run typecheck   # TypeScript strict, no errors expected
+npm test            # Jest: 39 tests, 100% branch coverage on utils
+npm run lint        # ESLint (expo preset)
+```
+
+### The aeroplane-mode test
+
+The Phase 0 exit gate requires the app to keep working with no cellular or Wi-Fi. On a physical phone:
+
+1. Open the app once with the device online (let Expo cache the bundle).
+2. Enable aeroplane mode.
+3. Re-open the app. Grant location permission if asked.
+4. **Expected:** SOG, COG, LAT, LON all update live; the connection badge reads "Offline".
+
+GPS is satellite-based and works without any network. If the numbers update, Phase 0 passes.
+
 ## For contributors
 
 Development is AI-assisted via Claude Code. Instructions for the AI live in `CLAUDE.md` at the repo root.
