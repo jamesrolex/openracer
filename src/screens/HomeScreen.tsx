@@ -1,6 +1,6 @@
 /**
- * Phase 0 HomeScreen. Reads boat state from useBoatStore. The actual GPS
- * and connectivity hooks are driven once by useLiveTelemetry (mounted in
+ * HomeScreen. Reads boat state from useBoatStore. The actual GPS and
+ * connectivity hooks are driven once by useLiveTelemetry (mounted in
  * App.tsx) — this screen is a pure reader.
  *
  * Layout (see skills/design-system "Primary data screen"):
@@ -13,14 +13,17 @@
  *       LAT                 LON
  *       52.8205             -4.5025
  *
- *   GPS ±3 m · updated 1 s ago
+ *   GPS ±3 m · updated 1 s ago                    [Marks →]
  */
 
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, View } from 'tamagui';
 
 import { BigNumber } from '../components/BigNumber';
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { ModeToggle } from '../components/ModeToggle';
+import type { RootStackScreenProps } from '../navigation';
 import { useBoatStore } from '../stores/useBoatStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
@@ -29,7 +32,7 @@ import { formatBearing, formatDistance, formatLatLon, metresPerSecondToKnots } f
 const STALE_AFTER_MS = 3000;
 const PLACEHOLDER = '—';
 
-export function HomeScreen() {
+export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
   const nightMode = useSettingsStore((state) => state.nightMode);
   const theme = getTheme(nightMode ? 'night' : 'day');
 
@@ -49,9 +52,6 @@ export function HomeScreen() {
 
   const sogDisplay = sog === null ? PLACEHOLDER : metresPerSecondToKnots(sog).toFixed(1);
   const cogDisplay = cog === null ? PLACEHOLDER : formatBearing(cog).replace('°', '');
-  // Phase 0 plan calls for decimal coords on HomeScreen; sailors expect
-  // hemisphere letters (N / S / E / W) rather than signed numbers, so the
-  // formatter is used with `decimal` rather than raw toFixed (B-007).
   const { lat: latDisplay, lon: lonDisplay } = splitLatLonForDisplay(position);
 
   const accuracyDisplay = accuracy === null ? PLACEHOLDER : `GPS ${formatDistance(accuracy, 'm')}`;
@@ -63,75 +63,75 @@ export function HomeScreen() {
   const latEmphasis = position === null ? 'muted' : 'secondary';
   const lonEmphasis = position === null ? 'muted' : 'secondary';
 
-  const styles = StyleSheet.create({
-    safe: {
-      flex: 1,
-      backgroundColor: theme.bg,
-    },
-    root: {
-      flex: 1,
-      paddingHorizontal: theme.space.md,
-      paddingTop: theme.space.sm,
-      paddingBottom: theme.space.md,
-    },
-    topBar: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: theme.space.lg,
-    },
-    grid: {
-      flex: 1,
-      justifyContent: 'space-evenly',
-    },
-    row: {
-      flexDirection: 'row',
-    },
-    meta: {
-      color: theme.text.muted,
-      fontSize: theme.type.caption.size,
-      fontWeight: theme.type.caption.weight as '400',
-      lineHeight: theme.type.caption.lineHeight,
-      textAlign: 'center',
-      marginTop: theme.space.sm,
-    },
-    permissionNote: {
-      color: theme.text.secondary,
-      fontSize: theme.type.body.size,
-      lineHeight: theme.type.body.lineHeight,
-      textAlign: 'center',
-      paddingHorizontal: theme.space.lg,
-      marginTop: theme.space.md,
-    },
-  });
-
   const variant = nightMode ? 'night' : 'day';
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.root}>
-        <View style={styles.topBar}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
+      <View
+        flex={1}
+        paddingHorizontal={theme.space.md}
+        paddingTop={theme.space.sm}
+        paddingBottom={theme.space.md}
+      >
+        <View
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems="center"
+          marginBottom={theme.space.lg}
+        >
           <ConnectionBadge mode={connectivity} variant={variant} />
           <ModeToggle mode={mode} onChange={setMode} variant={variant} />
         </View>
 
-        <View style={styles.grid}>
-          <View style={styles.row}>
+        <View flex={1} justifyContent="space-evenly">
+          <View flexDirection="row">
             <BigNumber label="SOG" value={sogDisplay} unit="kn" emphasis={sogEmphasis} stale={stale} variant={variant} />
             <BigNumber label="COG" value={cogDisplay} unit="°" emphasis={cogEmphasis} stale={stale} variant={variant} />
           </View>
-          <View style={styles.row}>
+          <View flexDirection="row">
             <BigNumber label="LAT" value={latDisplay} emphasis={latEmphasis} stale={stale} variant={variant} />
             <BigNumber label="LON" value={lonDisplay} emphasis={lonEmphasis} stale={stale} variant={variant} />
           </View>
         </View>
 
-        <Text style={styles.meta}>
-          {accuracyDisplay} · {freshnessDisplay}
-        </Text>
+        <View
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="space-between"
+          marginTop={theme.space.sm}
+        >
+          <Text
+            color={theme.text.muted}
+            fontSize={theme.type.caption.size}
+            fontWeight={theme.type.caption.weight as '400'}
+            lineHeight={theme.type.caption.lineHeight}
+            flex={1}
+          >
+            {accuracyDisplay} · {freshnessDisplay}
+          </Text>
+          <Pressable
+            onPress={() => navigation.navigate('MarkLibrary')}
+            accessibilityLabel="Open mark library"
+          >
+            <Text
+              color={theme.accent}
+              fontSize={theme.type.caption.size}
+              fontWeight={theme.type.bodySemi.weight as '600'}
+            >
+              Marks →
+            </Text>
+          </Pressable>
+        </View>
 
         {permissionStatus === 'denied' ? (
-          <Text style={styles.permissionNote}>
+          <Text
+            color={theme.text.secondary}
+            fontSize={theme.type.body.size}
+            lineHeight={theme.type.body.lineHeight}
+            textAlign="center"
+            paddingHorizontal={theme.space.lg}
+            marginTop={theme.space.md}
+          >
             Location access is off. Open Settings to enable it for OpenRacer — the app needs GPS
             to show your boat&apos;s position.
           </Text>
