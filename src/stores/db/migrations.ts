@@ -87,9 +87,22 @@ const m0004_race_sessions: Migration = async (db) => {
   `);
 };
 
+/** v5 — committee_trust. Trusted keys for committee-boat push. */
+const m0005_committee_trust: Migration = async (db) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS committee_trust (
+      committee_id TEXT PRIMARY KEY NOT NULL,
+      committee_name TEXT NOT NULL,
+      public_key TEXT NOT NULL,
+      added_at TEXT NOT NULL
+    );
+  `);
+};
+
 export const migrations: Migration[] = [
   m0001_kv_store,
   m0002_marks,
   m0003_courses,
   m0004_race_sessions,
+  m0005_committee_trust,
 ];

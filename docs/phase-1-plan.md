@@ -390,6 +390,15 @@ Not in Phase 1 scope; captured so they aren't lost.
   existing plan; if it slips, revisit once MapLibre is in so we can
   visualise the two bearing lines on the chart and show the triangulated
   fix point before committing.
+- **Photo-of-course-board OCR**. Take a photo of the committee-boat
+  course sheet and let the app parse it into a populated course (course
+  code / mark IDs + rounding). Realistic path: on-device OCR via Vision
+  Kit (iOS) + ML Kit (Android) extracts text; a parser maps "1 to 4 to 2
+  to 4 to finish" or "W-L, Y → R (P)" into mark references against the
+  library. Useful when committees don't broadcast and the sailor has
+  30 seconds before the five. **Natural home:** a Phase 4-5 delivery
+  once AI/Claude integration is wired — or sooner as a deterministic
+  parser if committees use a consistent format.
 - **Start-line type selector + rabbit-start support**. Today a start leg
   is simply "two marks" and the code has no opinion about which is the
   committee boat vs the pin end. Week 7 delivers distance-to-line +
