@@ -86,6 +86,49 @@ Tier 3 BOM is locked (see `openracer_project_spec_v6.docx` and `racing_nav_sourc
 - Autopilot bridge (PyPilot integration) — post-v1 Phase 16
 - Satellite comms integration beyond iPhone Starlink — post-v1 Phase 19
 - Dinghy Edition (Apple Watch primary) — post-v1 Phase 12+
+- **Tier 3 custom hardware** (ESP32-S3 anemometer, Open Echo depth sounder, IP68 enclosures) — moved to post-v1 Phase 10.5, see "Build system" below
+- **MCP server write endpoints + tools** — v1.5. Read-only resources only in v1.8 Phase.
+- **Open API write endpoints + webhooks** — v1.5. Read-only REST + WebSocket mirror of SignalK in v1 Phase 8.
+
+## Build system evolution (locked after Phase 0 review, 2026-04-24)
+
+The project crosses three build-system thresholds. Plan the transitions; do not discover them mid-phase.
+
+| Phase | Build system | Trigger | What changes |
+|---|---|---|---|
+| 0-1 | **Expo Go** | Default | JS-only changes, pure-Expo modules (location, network, sqlite). Zero Xcode. |
+| 2 onwards | **EAS dev build** | First native module outside Expo Go (MapLibre at Phase 2) | Xcode + Android Studio installed. Dev client built once via `eas build --profile development`. Fast JS reload still works; native changes require a rebuild. |
+| 11 | **EAS production build** | Community launch | App Store + Play Store binaries via EAS submit. Code signing, provisioning profiles, store listings. |
+
+**Rule:** do not migrate early. Expo Go is faster while it works. First sign of a native-module need = plan the migration inside the phase that needs it.
+
+## Tier 3 hardware — deferred to post-v1 (locked after Phase 0 review, 2026-04-24)
+
+Tier 3 (ESP32-S3 controller, Veinasa CXS02B-N ultrasonic anemometer, Open Echo depth sounder, Raspberry Pi 4, IP68 enclosures) is a parallel hardware-engineering track of ~200 hours of firmware + PCB + mechanical + environmental testing. Running it concurrently with v1 software risks missing the racing season.
+
+**Decision:** Tier 3 ships as post-v1 Phase 10.5, not v1 Phase 10.
+
+**Implication:**
+- v1 ships Tier 1 (phone) + Tier 2 (Pi + existing NMEA instruments).
+- Tier 3 BOM (`docs/hardware_sourcing.xlsx`) is preserved but frozen until v1 lands.
+- `docs/roadmap.md` updated to reflect the new phase ordering.
+- Tier 3 may be pursued earlier if a hardware collaborator joins the project; solo, it is deferred.
+
+## Local AI — device test before UX (locked after Phase 0 review, 2026-04-24)
+
+Llama 3.2 3B on-device is the biggest technical unknown in the plan:
+
+- Quantised model download: 2-4 GB
+- Cold inference on iPhone 13: estimated 10-30 seconds per short debrief
+- Android inference perf is device-dependent and harder to guarantee
+
+**Decision:** Phase 4 begins with a **device-performance spike**, not UX work.
+
+- Ship a minimal screen that runs a canned prompt through `llama.rn` on the project owner's actual phone, logs cold-start time, warm inference time, and memory watermark.
+- If cold inference > 30 s or memory > 1.5 GB, redesign the UX around asynchronous debriefs (start debrief → notify when ready) BEFORE writing the Q&A screen.
+- If perf is acceptable, proceed with the UX as specced.
+
+Gust-aware nudges are signal-processing, not LLM-driven, and are unaffected by this gate.
 
 ## When to revisit
 
