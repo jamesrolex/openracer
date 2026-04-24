@@ -157,7 +157,9 @@ export function MarkLibraryScreen({ navigation }: RootStackScreenProps<'MarkLibr
           value={query}
           onChangeText={setQuery}
           placeholder="Search marks…"
-          size="$md"
+          height={44}
+          paddingHorizontal={theme.space.md}
+          fontSize={theme.type.body.size}
           borderColor={theme.border}
           backgroundColor={theme.surface}
           color={theme.text.primary}

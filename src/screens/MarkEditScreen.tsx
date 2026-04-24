@@ -211,7 +211,9 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
           value={name}
           onChangeText={setName}
           placeholder="e.g. Yellow, Committee Boat"
-          size="$md"
+          height={44}
+          paddingHorizontal={theme.space.md}
+          fontSize={theme.type.body.size}
           borderColor={theme.border}
           backgroundColor={theme.surface}
           color={theme.text.primary}
@@ -236,7 +238,9 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
           value={latInput}
           onChangeText={setLatInput}
           placeholder="Lat e.g. 52° 49.230' N"
-          size="$md"
+          height={44}
+          paddingHorizontal={theme.space.md}
+          fontSize={theme.type.body.size}
           borderColor={theme.border}
           backgroundColor={theme.surface}
           color={theme.text.primary}
@@ -249,7 +253,9 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
           value={lonInput}
           onChangeText={setLonInput}
           placeholder="Lon e.g. 4° 30.150' W"
-          size="$md"
+          height={44}
+          paddingHorizontal={theme.space.md}
+          fontSize={theme.type.body.size}
           borderColor={theme.border}
           backgroundColor={theme.surface}
           color={theme.text.primary}
@@ -359,13 +365,16 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
           value={notes}
           onChangeText={setNotes}
           placeholder="e.g. “windward mark for Wed night starts”"
-          size="$md"
+          minHeight={88}
+          paddingHorizontal={theme.space.md}
+          paddingVertical={theme.space.sm}
+          fontSize={theme.type.body.size}
           borderColor={theme.border}
           backgroundColor={theme.surface}
           color={theme.text.primary}
           placeholderTextColor={theme.text.muted}
           multiline
-          numberOfLines={2}
+          textAlignVertical="top"
           marginBottom={theme.space.md}
         />
 
