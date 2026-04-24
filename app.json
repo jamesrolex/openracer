@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "OpenRacer",
+    "slug": "openracer",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a1628"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.openracer.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "OpenRacer uses your location to show your boat's position, speed, and heading while racing or cruising.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "OpenRacer uses your location to show your boat's position, speed, and heading while racing or cruising.",
+        "UIBackgroundModes": [
+          "location"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.openracer.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a1628"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "OpenRacer uses your location to show your boat's position, speed, and heading."
+        }
+      ],
+      "expo-sqlite"
+    ]
+  }
+}
