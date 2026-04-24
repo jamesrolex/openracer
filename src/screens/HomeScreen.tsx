@@ -1,5 +1,7 @@
 /**
- * Phase 0 HomeScreen. Shows live GPS data plus connectivity and mode.
+ * Phase 0 HomeScreen. Reads boat state from useBoatStore. The actual GPS
+ * and connectivity hooks are driven once by useLiveTelemetry (mounted in
+ * App.tsx) — this screen is a pure reader.
  *
  * Layout (see skills/design-system "Primary data screen"):
  *   [ConnectionBadge]                          [ModeToggle]
@@ -14,14 +16,11 @@
  *   GPS ±3 m · updated 1 s ago
  */
 
-import { useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { BigNumber } from '../components/BigNumber';
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { ModeToggle } from '../components/ModeToggle';
-import { useConnectivity } from '../hooks/useConnectivity';
-import { useGPS } from '../hooks/useGPS';
 import { useBoatStore } from '../stores/useBoatStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
@@ -34,45 +33,28 @@ export function HomeScreen() {
   const coordFormat = useSettingsStore((state) => state.coordFormat);
   const theme = getTheme(nightMode ? 'night' : 'day');
 
-  const gps = useGPS();
-  const connectivity = useConnectivity();
-
+  const position = useBoatStore((state) => state.position);
+  const sog = useBoatStore((state) => state.sog);
+  const cog = useBoatStore((state) => state.cog);
+  const accuracy = useBoatStore((state) => state.accuracy);
+  const lastUpdate = useBoatStore((state) => state.lastUpdate);
   const mode = useBoatStore((state) => state.mode);
-  const setNavigation = useBoatStore((state) => state.setNavigation);
-  const setConnectivity = useBoatStore((state) => state.setConnectivity);
+  const connectivity = useBoatStore((state) => state.connectivity);
+  const permissionStatus = useBoatStore((state) => state.permissionStatus);
   const setMode = useBoatStore((state) => state.setMode);
 
-  useEffect(() => {
-    setNavigation({
-      position: gps.position,
-      sog: gps.sog,
-      cog: gps.cog,
-      heading: gps.heading,
-      accuracy: gps.accuracy,
-      lastUpdate: gps.lastUpdate,
-    });
-  }, [gps.position, gps.sog, gps.cog, gps.heading, gps.accuracy, gps.lastUpdate, setNavigation]);
-
-  useEffect(() => {
-    setConnectivity(connectivity);
-  }, [connectivity, setConnectivity]);
-
   const now = Date.now();
-  const lastUpdateMs = gps.lastUpdate ? new Date(gps.lastUpdate).getTime() : null;
+  const lastUpdateMs = lastUpdate ? new Date(lastUpdate).getTime() : null;
   const stale = lastUpdateMs === null ? true : now - lastUpdateMs > STALE_AFTER_MS;
 
-  const sogDisplay =
-    gps.sog === null ? '—' : metresPerSecondToKnots(gps.sog).toFixed(1);
-  const cogDisplay = gps.cog === null ? '—' : formatBearing(gps.cog).replace('°', '');
+  const sogDisplay = sog === null ? '—' : metresPerSecondToKnots(sog).toFixed(1);
+  const cogDisplay = cog === null ? '—' : formatBearing(cog).replace('°', '');
   const coordDisplay =
-    gps.position === null
+    position === null
       ? { lat: '—', lon: '—' }
-      : splitFormattedLatLon(
-          formatLatLon(gps.position.latitude, gps.position.longitude, coordFormat),
-        );
+      : splitFormattedLatLon(formatLatLon(position.latitude, position.longitude, coordFormat));
 
-  const accuracyDisplay =
-    gps.accuracy === null ? '—' : `GPS ${formatDistance(gps.accuracy, 'm')}`;
+  const accuracyDisplay = accuracy === null ? '—' : `GPS ${formatDistance(accuracy, 'm')}`;
   const freshnessDisplay =
     lastUpdateMs === null ? 'waiting for fix' : `updated ${describeAge(now - lastUpdateMs)}`;
 
@@ -143,7 +125,7 @@ export function HomeScreen() {
           {accuracyDisplay} · {freshnessDisplay}
         </Text>
 
-        {gps.permissionStatus === 'denied' ? (
+        {permissionStatus === 'denied' ? (
           <Text style={styles.permissionNote}>
             Location access is off. Open Settings to enable it for OpenRacer — the app needs GPS
             to show your boat&apos;s position.
