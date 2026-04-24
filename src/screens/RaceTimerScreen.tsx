@@ -44,6 +44,12 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const undoLastGunChange = useRaceStore((s) => s.undoLastGunChange);
   const previousGunTime = useRaceStore((s) => s.previousGunTime);
   const previousGunCapturedAt = useRaceStore((s) => s.previousGunCapturedAt);
+  const postponedAt = useRaceStore((s) => s.postponedAt);
+  const individualRecallAt = useRaceStore((s) => s.individualRecallAt);
+  const raiseAp = useRaceStore((s) => s.raiseAp);
+  const dropAp = useRaceStore((s) => s.dropAp);
+  const raiseIndividualRecall = useRaceStore((s) => s.raiseIndividualRecall);
+  const clearIndividualRecall = useRaceStore((s) => s.clearIndividualRecall);
   const abandon = useRaceStore((s) => s.abandon);
   const finish = useRaceStore((s) => s.finish);
   const setActiveSessionState = useRaceStore((s) => s.setActiveSessionState);
@@ -55,7 +61,10 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
     draft !== null ? computeCourseDistance(draft.legs, marks).totalMetres : 0;
 
   const [snapshot, setSnapshot] = useState(() =>
-    makeSnapshot(sequenceStartTime, new Date(), sequence),
+    makeSnapshot(sequenceStartTime, new Date(), sequence, {
+      postponedAt,
+      individualRecallAt,
+    }),
   );
   const lastMinuteFiredRef = useRef<number | null>(null);
   const startGunFiredRef = useRef(false);
@@ -63,10 +72,15 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   // Tick.
   useEffect(() => {
     const id = setInterval(() => {
-      setSnapshot(makeSnapshot(sequenceStartTime, new Date(), sequence));
+      setSnapshot(
+        makeSnapshot(sequenceStartTime, new Date(), sequence, {
+          postponedAt,
+          individualRecallAt,
+        }),
+      );
     }, 250);
     return () => clearInterval(id);
-  }, [sequenceStartTime, sequence]);
+  }, [sequenceStartTime, sequence, postponedAt, individualRecallAt]);
 
   // Haptic on each whole minute transition during countdown, and a heavy
   // haptic at the gun (T=0).
@@ -83,17 +97,21 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       void setActiveSessionState('running');
     }
-    if (snapshot.state === 'idle') {
+    if (snapshot.state === 'idle' || snapshot.state === 'postponed') {
+      // Reset both refs so a fresh post-AP countdown re-fires the minute
+      // haptics + the gun haptic exactly once.
       lastMinuteFiredRef.current = null;
       startGunFiredRef.current = false;
     }
   }, [snapshot, setActiveSessionState]);
 
   // Schedule / cancel notifications in response to timer state.
+  // Postponement cancels them; dropping AP (which changes sequenceStartTime)
+  // re-runs this effect and re-schedules cleanly.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (!sequenceStartTime) {
+      if (!sequenceStartTime || postponedAt) {
         await cancelAllRaceNotifications();
         return;
       }
@@ -104,7 +122,7 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
     return () => {
       cancelled = true;
     };
-  }, [sequenceStartTime, sequence]);
+  }, [sequenceStartTime, sequence, postponedAt]);
 
   function handleAbandon() {
     Alert.alert('Abandon race?', 'Timer will stop and scheduled notifications cancelled.', [
@@ -152,6 +170,44 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
         },
       },
     ]);
+  }
+
+  function handleRaiseAp() {
+    Alert.alert(
+      'Postpone (AP)?',
+      'Countdown freezes. Notifications cancelled. Tap "Drop AP" when you\u2019re ready to restart.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Raise AP',
+          onPress: () => {
+            raiseAp();
+            void cancelAllRaceNotifications();
+          },
+        },
+      ],
+    );
+  }
+
+  function handleDropAp() {
+    Alert.alert(
+      'Drop AP — restart in?',
+      'New gun rounded to the next whole minute from your choice.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: '5 min', onPress: () => dropAp(new Date(Date.now() + 5 * 60_000)) },
+        { text: '10 min', onPress: () => dropAp(new Date(Date.now() + 10 * 60_000)) },
+        { text: '15 min', onPress: () => dropAp(new Date(Date.now() + 15 * 60_000)) },
+      ],
+    );
+  }
+
+  function handleRaiseX() {
+    raiseIndividualRecall();
+  }
+
+  function handleClearX() {
+    clearIndividualRecall();
   }
 
   const bandColour = bandToColour(snapshot.band, theme);
@@ -243,13 +299,61 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
               />
             ) : null}
 
-            <GunSyncButton
-              onSync={syncToMinute}
-              onUndo={undoLastGunChange}
-              previousGunTime={previousGunTime}
-              previousGunCapturedAt={previousGunCapturedAt}
-              variant={variant}
-            />
+            {snapshot.state === 'postponed' ? (
+              <View
+                paddingVertical={theme.space.md}
+                paddingHorizontal={theme.space.md}
+                borderRadius={theme.radius.lg}
+                backgroundColor={theme.status.warning}
+                alignItems="center"
+                marginBottom={theme.space.sm}
+              >
+                <Text color={theme.bg} fontSize={theme.type.h2.size} fontWeight="700">
+                  AP — RACE POSTPONED
+                </Text>
+                <Text
+                  color={theme.bg}
+                  fontSize={theme.type.caption.size}
+                  marginTop={theme.space.xxs}
+                  opacity={0.9}
+                >
+                  Countdown frozen. Tap "Drop AP" when ready to restart.
+                </Text>
+              </View>
+            ) : null}
+
+            {snapshot.state === 'individual-recall' ? (
+              <View
+                paddingVertical={theme.space.sm}
+                paddingHorizontal={theme.space.md}
+                borderRadius={theme.radius.lg}
+                backgroundColor={theme.status.danger}
+                alignItems="center"
+                marginBottom={theme.space.sm}
+              >
+                <Text color={theme.bg} fontSize={theme.type.bodySemi.size} fontWeight="700">
+                  X — INDIVIDUAL RECALL
+                </Text>
+                <Text
+                  color={theme.bg}
+                  fontSize={theme.type.caption.size}
+                  marginTop={theme.space.xxs}
+                  opacity={0.9}
+                >
+                  4-min OCS-clear window. Auto-clears.
+                </Text>
+              </View>
+            ) : null}
+
+            {snapshot.state !== 'postponed' ? (
+              <GunSyncButton
+                onSync={syncToMinute}
+                onUndo={undoLastGunChange}
+                previousGunTime={previousGunTime}
+                previousGunCapturedAt={previousGunCapturedAt}
+                variant={variant}
+              />
+            ) : null}
 
             <View flexDirection="row" marginBottom={theme.space.sm}>
               <TimerButton
@@ -265,6 +369,41 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
                 variant="outline"
               />
             </View>
+
+            <View flexDirection="row" marginBottom={theme.space.sm}>
+              {snapshot.state === 'postponed' ? (
+                <TimerButton
+                  label="Drop AP"
+                  onPress={handleDropAp}
+                  theme={theme}
+                  variant="primary"
+                />
+              ) : snapshot.state === 'counting-down' || snapshot.state === 'armed' ? (
+                <TimerButton
+                  label="AP (postpone)"
+                  onPress={handleRaiseAp}
+                  theme={theme}
+                  variant="warning"
+                />
+              ) : null}
+
+              {snapshot.state === 'individual-recall' ? (
+                <TimerButton
+                  label="Clear X"
+                  onPress={handleClearX}
+                  theme={theme}
+                  variant="outline"
+                />
+              ) : snapshot.state === 'starting' || snapshot.state === 'running' ? (
+                <TimerButton
+                  label="X (indiv. recall)"
+                  onPress={handleRaiseX}
+                  theme={theme}
+                  variant="danger"
+                />
+              ) : null}
+            </View>
+
             <View flexDirection="row">
               <TimerButton
                 label="General recall"
@@ -272,7 +411,9 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
                 theme={theme}
                 variant="warning"
               />
-              {snapshot.state === 'running' || snapshot.state === 'starting' ? (
+              {snapshot.state === 'running' ||
+              snapshot.state === 'starting' ||
+              snapshot.state === 'individual-recall' ? (
                 <TimerButton
                   label="Finish"
                   onPress={handleFinish}
@@ -400,10 +541,14 @@ function labelForState(state: RaceState): string {
       return 'Armed — warning at T-5';
     case 'counting-down':
       return 'Counting down';
+    case 'postponed':
+      return 'Postponed (AP)';
     case 'starting':
       return 'Start!';
     case 'running':
       return 'Running';
+    case 'individual-recall':
+      return 'Individual recall (X)';
     case 'finished':
       return 'Finished';
     case 'abandoned':

@@ -92,3 +92,74 @@ describe('formatCountdown', () => {
     expect(formatCountdown(-67)).toBe('T+01:07');
   });
 });
+
+describe('makeSnapshot — postponement (AP)', () => {
+  it('reports postponed state when AP is up, regardless of clock', () => {
+    const ap = '2026-04-24T18:42:30Z'; // raised at T-2:30
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:43:00Z'), undefined, {
+      postponedAt: ap,
+    });
+    expect(snap.state).toBe('postponed');
+    expect(snap.band).toBe('preparing');
+  });
+
+  it('freezes the countdown at the moment AP went up', () => {
+    const ap = '2026-04-24T18:42:30Z'; // T-2:30
+    // Now is well past the gun, but AP still controls.
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:50:00Z'), undefined, {
+      postponedAt: ap,
+    });
+    expect(snap.state).toBe('postponed');
+    expect(snap.secondsToStart).toBe(150);
+  });
+
+  it('AP wins over individual-recall (race is paused, X meaningless)', () => {
+    const ap = '2026-04-24T18:46:00Z';
+    const x = '2026-04-24T18:45:30Z';
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:46:30Z'), undefined, {
+      postponedAt: ap,
+      individualRecallAt: x,
+    });
+    expect(snap.state).toBe('postponed');
+  });
+
+  it('clearing AP returns to the time-driven state', () => {
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:43:00Z'), undefined, {
+      postponedAt: null,
+    });
+    expect(snap.state).toBe('counting-down');
+  });
+});
+
+describe('makeSnapshot — individual recall (X)', () => {
+  it('overlays running with individual-recall while inside the 4-min window', () => {
+    const x = '2026-04-24T18:45:00Z'; // raised at the gun
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:46:00Z'), undefined, {
+      individualRecallAt: x,
+    });
+    expect(snap.state).toBe('individual-recall');
+  });
+
+  it('falls back to running once the 4-min window closes', () => {
+    const x = '2026-04-24T18:45:00Z';
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:49:30Z'), undefined, {
+      individualRecallAt: x,
+    });
+    expect(snap.state).toBe('running');
+  });
+
+  it('does not apply X before the gun', () => {
+    const x = '2026-04-24T18:45:00Z'; // raised at gun
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:43:00Z'), undefined, {
+      individualRecallAt: x,
+    });
+    expect(snap.state).toBe('counting-down');
+  });
+
+  it('does not apply X if it is null', () => {
+    const snap = makeSnapshot(gun.toISOString(), at('2026-04-24T18:46:00Z'), undefined, {
+      individualRecallAt: null,
+    });
+    expect(snap.state).toBe('running');
+  });
+});

@@ -203,8 +203,10 @@ function StateChip({
     idle: { label: 'IDLE', bg: theme.text.muted },
     armed: { label: 'ARMED', bg: theme.text.muted },
     'counting-down': { label: 'COUNTING', bg: theme.status.warning },
+    postponed: { label: 'AP', bg: theme.status.warning },
     starting: { label: 'STARTING', bg: theme.status.success },
     running: { label: 'RUNNING', bg: theme.status.success },
+    'individual-recall': { label: 'X', bg: theme.status.danger },
     finished: { label: 'FINISHED', bg: theme.accent },
     abandoned: { label: 'ABANDONED', bg: theme.status.danger },
   };

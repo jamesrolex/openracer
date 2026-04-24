@@ -49,6 +49,13 @@ export interface RaceStoreState {
   /** ISO 8601 UTC — when previousGunTime was captured. Used to time-bound
    *  the Undo affordance (auto-clears after the UNDO_WINDOW_MS). */
   previousGunCapturedAt: string | null;
+  /** ISO 8601 UTC — when AP went up. While set, the snapshot is frozen at
+   *  this moment; countdown pauses. Cleared by `dropAp()`. */
+  postponedAt: string | null;
+  /** ISO 8601 UTC — when X (individual recall) was raised after the gun.
+   *  The snapshot reports state = 'individual-recall' for ~4 min per
+   *  Rule 29.1. Cleared by `clearIndividualRecall()` or auto on a fresh arm. */
+  individualRecallAt: string | null;
 }
 
 export interface RaceActions {
@@ -74,6 +81,14 @@ export interface RaceActions {
    *  syncToMinute / shiftMinutes / generalRecall, if the undo window
    *  hasn't expired. No-op when there's nothing to undo. */
   undoLastGunChange: () => void;
+  /** Raise AP — postpone the start. Snapshot freezes at this moment. */
+  raiseAp: () => void;
+  /** Drop AP and restart the sequence with a fresh gun at `restartAt`. */
+  dropAp: (restartAt: Date) => void;
+  /** Raise the X flag after the gun. Visible for ~4 min per Rule 29.1. */
+  raiseIndividualRecall: () => void;
+  /** Clear the X flag manually (RC has visible OCS-clear before the window). */
+  clearIndividualRecall: () => void;
 }
 
 /** How long (ms) the "Undo last gun sync" affordance stays available. */
@@ -90,6 +105,8 @@ const initial: RaceStoreState = {
   lastTrackLongitude: null,
   previousGunTime: null,
   previousGunCapturedAt: null,
+  postponedAt: null,
+  individualRecallAt: null,
 };
 
 // Haversine great-circle distance, inlined here to avoid pulling a
@@ -130,6 +147,8 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
           sailedMetres: 0,
           lastTrackLatitude: null,
           lastTrackLongitude: null,
+          postponedAt: null,
+          individualRecallAt: null,
         });
         return session.id;
       },
@@ -177,6 +196,30 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
           previousGunTime: null,
           previousGunCapturedAt: null,
         });
+      },
+
+      raiseAp: () => {
+        const { sequenceStartTime, postponedAt } = get();
+        if (!sequenceStartTime || postponedAt) return;
+        set({ postponedAt: new Date().toISOString() });
+      },
+
+      dropAp: (restartAt) => {
+        const rounded = syncToNextWholeMinute(restartAt);
+        set({
+          sequenceStartTime: rounded.toISOString(),
+          postponedAt: null,
+        });
+      },
+
+      raiseIndividualRecall: () => {
+        const { sequenceStartTime, individualRecallAt } = get();
+        if (!sequenceStartTime || individualRecallAt) return;
+        set({ individualRecallAt: new Date().toISOString() });
+      },
+
+      clearIndividualRecall: () => {
+        set({ individualRecallAt: null });
       },
 
       abandon: async () => {
@@ -237,6 +280,8 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
         lastTrackLongitude: state.lastTrackLongitude,
         previousGunTime: state.previousGunTime,
         previousGunCapturedAt: state.previousGunCapturedAt,
+        postponedAt: state.postponedAt,
+        individualRecallAt: state.individualRecallAt,
       }),
     },
   ),

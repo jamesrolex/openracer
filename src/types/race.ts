@@ -9,8 +9,10 @@ export type RaceState =
   | 'idle'
   | 'armed'
   | 'counting-down'
+  | 'postponed'
   | 'starting'
   | 'running'
+  | 'individual-recall'
   | 'finished'
   | 'abandoned';
 

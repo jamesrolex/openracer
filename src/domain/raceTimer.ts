@@ -40,12 +40,30 @@ export interface TimerSnapshot {
 const STARTING_WINDOW_MS = 3000;
 /** Running state caps after this long (safety for people who forget to finish). */
 const RUNNING_CAP_MS = 6 * 60 * 60 * 1000;
+/** Window in which the X flag is shown after the gun (Rule 29.1). */
+export const INDIVIDUAL_RECALL_WINDOW_MS = 4 * 60_000;
+
+export interface TimerExtras {
+  /** ISO timestamp when AP went up. While set, the timer is frozen. Null = no AP. */
+  postponedAt?: string | null;
+  /** ISO timestamp when X was raised after the gun. While set AND inside the
+   *  4-min Rule 29.1 window, the snapshot reports state = 'individual-recall'. */
+  individualRecallAt?: string | null;
+}
 
 export function makeSnapshot(
   sequenceStartTime: string | null,
   now: Date,
   sequence: StartSequence = STANDARD_START_SEQUENCE,
+  extras: TimerExtras = {},
 ): TimerSnapshot {
+  // Postponement freezes the snapshot at the moment AP went up. Everything
+  // downstream sees a stale `now`; the visible countdown stops moving.
+  const effectiveNow =
+    extras.postponedAt !== undefined && extras.postponedAt !== null
+      ? new Date(extras.postponedAt)
+      : now;
+
   if (sequenceStartTime === null) {
     return {
       state: 'idle',
@@ -59,7 +77,7 @@ export function makeSnapshot(
   }
 
   const startMs = new Date(sequenceStartTime).getTime();
-  const diff = startMs - now.getTime();
+  const diff = startMs - effectiveNow.getTime();
 
   const signalOffsets: { signal: SequenceSignal; atMs: number }[] = [
     { signal: 'warning', atMs: sequence.warningAtMs },
@@ -82,10 +100,19 @@ export function makeSnapshot(
     }
   }
 
-  // State derivation.
+  // State derivation. Postponement and individual-recall overlay the
+  // baseline state machine: AP wins outright (race is paused); X flag
+  // overlays only inside the 4-minute Rule 29.1 window after the gun.
   let state: RaceState;
   let band: TimerSnapshot['band'];
-  if (offsetFromStart < sequence.warningAtMs) {
+
+  const isPostponed =
+    extras.postponedAt !== undefined && extras.postponedAt !== null;
+
+  if (isPostponed) {
+    state = 'postponed';
+    band = 'preparing';
+  } else if (offsetFromStart < sequence.warningAtMs) {
     // Armed but the warning signal hasn't fired yet.
     state = 'armed';
     band = 'dormant';
@@ -104,6 +131,20 @@ export function makeSnapshot(
   } else {
     state = 'finished';
     band = 'after';
+  }
+
+  // Individual recall overlays running/starting only if the X flag is up
+  // and we're inside the 4-minute window from the gun.
+  if (
+    !isPostponed &&
+    extras.individualRecallAt !== undefined &&
+    extras.individualRecallAt !== null &&
+    (state === 'running' || state === 'starting')
+  ) {
+    const ageMs = now.getTime() - new Date(extras.individualRecallAt).getTime();
+    if (ageMs >= 0 && ageMs < INDIVIDUAL_RECALL_WINDOW_MS) {
+      state = 'individual-recall';
+    }
   }
 
   return {
