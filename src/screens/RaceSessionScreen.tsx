@@ -4,11 +4,14 @@
  * this screen grows a chart view with the track plotted.
  */
 
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
+import { buildGpx, gpxFilename } from '../domain/gpxExport';
 import { computeTrackStats, formatDuration } from '../domain/trackStats';
 import type { RootStackScreenProps } from '../navigation';
 import {
@@ -31,6 +34,40 @@ export function RaceSessionScreen({
   const [session, setSession] = useState<RaceSession | null>(null);
   const [points, setPoints] = useState<TrackPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  async function exportGpx() {
+    if (!session) return;
+    setExporting(true);
+    try {
+      const xml = buildGpx({ session, points });
+      const filename = gpxFilename(session);
+      const uri = `${FileSystem.cacheDirectory}${filename}`;
+      await FileSystem.writeAsStringAsync(uri, xml, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      const available = await Sharing.isAvailableAsync();
+      if (!available) {
+        Alert.alert(
+          'Sharing not available',
+          'This device can’t open the share sheet. The file was saved at:\n' + uri,
+        );
+        return;
+      }
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/gpx+xml',
+        dialogTitle: 'Share race track',
+        UTI: 'com.topografix.gpx',
+      });
+    } catch (err) {
+      Alert.alert(
+        'Export failed',
+        err instanceof Error ? err.message : 'Could not write the GPX file.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     void (async () => {
@@ -76,7 +113,25 @@ export function RaceSessionScreen({
           >
             Race
           </Text>
-          <View width={44} />
+          {session && points.length > 0 ? (
+            <Pressable
+              onPress={() => void exportGpx()}
+              disabled={exporting}
+              hitSlop={8}
+              accessibilityLabel="Export GPX"
+            >
+              <Text
+                color={theme.accent}
+                fontSize={theme.type.body.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+                opacity={exporting ? 0.5 : 1}
+              >
+                {exporting ? 'Exporting…' : 'Export GPX'}
+              </Text>
+            </Pressable>
+          ) : (
+            <View width={44} />
+          )}
         </View>
 
         {loading ? (
