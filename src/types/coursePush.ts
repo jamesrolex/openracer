@@ -97,3 +97,18 @@ export interface CommitteeTrust {
   /** ISO 8601 UTC — when this key was added to the trust list. */
   addedAt: string;
 }
+
+/**
+ * QR envelope. A QR code carries one of two payload kinds:
+ *
+ * - `trust`: committee's public identity. Scanning it adds the committee
+ *   to the receiver's trust list so future bundles from them are accepted.
+ * - `bundle`: a signed course-push bundle (same shape as over-the-wire).
+ *
+ * A discriminator is cheap and keeps the scanner from mis-dispatching.
+ */
+export type QrEnvelope =
+  | { kind: 'openracer-trust'; version: string; trust: Omit<CommitteeTrust, 'addedAt'> }
+  | { kind: 'openracer-bundle'; version: string; bundle: CoursePushBundle };
+
+export const QR_ENVELOPE_VERSION = '1.0.0';
