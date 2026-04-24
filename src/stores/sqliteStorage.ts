@@ -1,32 +1,17 @@
 /**
  * Zustand `persist` storage adapter backed by expo-sqlite.
  *
- * Uses a single table `kv_store(key TEXT PRIMARY KEY, value TEXT)` in a
- * dedicated database `openracer.db`. All operations are async and fail
- * safe — on error we resolve to `null` / `undefined` so the persist
- * middleware falls back to the in-memory default, never crashes the app.
+ * Uses the shared `kv_store` table managed by the migration runner in
+ * `./db`. All operations are async and fail safe — on error we resolve to
+ * `null` / `undefined` so the persist middleware falls back to the in-memory
+ * default, never crashes the app.
  */
 
-import * as SQLite from 'expo-sqlite';
 import type { PersistStorage, StorageValue } from 'zustand/middleware';
 
-const DATABASE_NAME = 'openracer.db';
+import { getDb } from './db';
+
 const TABLE_NAME = 'kv_store';
-
-let cachedDb: SQLite.SQLiteDatabase | null = null;
-let initPromise: Promise<void> | null = null;
-
-async function getDb(): Promise<SQLite.SQLiteDatabase> {
-  if (cachedDb) return cachedDb;
-  cachedDb = await SQLite.openDatabaseAsync(DATABASE_NAME);
-  if (!initPromise) {
-    initPromise = cachedDb.execAsync(
-      `CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);`,
-    );
-  }
-  await initPromise;
-  return cachedDb;
-}
 
 /**
  * Build a PersistStorage<T> for a Zustand store. Typed so the middleware
