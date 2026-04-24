@@ -201,7 +201,7 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
               fontWeight={theme.type.bodySemi.weight as '600'}
               opacity={saving ? 0.5 : 1}
             >
-              Save
+              {saving ? 'Saving…' : 'Save'}
             </Text>
           </Pressable>
         </View>

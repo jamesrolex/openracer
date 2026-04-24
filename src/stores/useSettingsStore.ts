@@ -25,6 +25,8 @@ export interface SettingsState {
   nightMode: boolean;
   /** Locale for user-facing copy. Only en-GB is populated for Phase 0. */
   language: 'en-GB';
+  /** First-launch onboarding gate — false until the sailor taps "Get started". */
+  onboardingCompleted: boolean;
 }
 
 export interface SettingsActions {
@@ -32,6 +34,7 @@ export interface SettingsActions {
   setDistanceUnit: (unit: DistanceUnit) => void;
   setCoordFormat: (format: LatLonFormat) => void;
   setNightMode: (on: boolean) => void;
+  completeOnboarding: () => void;
 }
 
 const defaults: SettingsState = {
@@ -40,6 +43,7 @@ const defaults: SettingsState = {
   coordFormat: 'dmm',
   nightMode: false,
   language: 'en-GB',
+  onboardingCompleted: false,
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -50,6 +54,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setDistanceUnit: (distanceUnit) => set({ distanceUnit }),
       setCoordFormat: (coordFormat) => set({ coordFormat }),
       setNightMode: (nightMode) => set({ nightMode }),
+      completeOnboarding: () => set({ onboardingCompleted: true }),
     }),
     {
       name: 'openracer.settings',
@@ -60,6 +65,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         coordFormat: state.coordFormat,
         nightMode: state.nightMode,
         language: state.language,
+        onboardingCompleted: state.onboardingCompleted,
       }),
     },
   ),

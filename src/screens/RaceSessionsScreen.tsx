@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Pressable } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
@@ -97,7 +97,10 @@ export function RaceSessionsScreen({
 
         {loading ? (
           <View flex={1} alignItems="center" justifyContent="center">
-            <Text color={theme.text.muted}>Loading…</Text>
+            <ActivityIndicator color={theme.text.muted} />
+            <Text color={theme.text.muted} marginTop={theme.space.sm}>
+              Loading…
+            </Text>
           </View>
         ) : rows.length === 0 ? (
           <View flex={1} alignItems="center" justifyContent="center" padding={theme.space.lg}>

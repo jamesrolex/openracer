@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
@@ -81,7 +81,10 @@ export function RaceSessionScreen({
 
         {loading ? (
           <View alignItems="center" paddingVertical={theme.space.xl}>
-            <Text color={theme.text.muted}>Loading…</Text>
+            <ActivityIndicator color={theme.text.muted} />
+            <Text color={theme.text.muted} marginTop={theme.space.sm}>
+              Loading…
+            </Text>
           </View>
         ) : !session ? (
           <View alignItems="center" paddingVertical={theme.space.xl}>

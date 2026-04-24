@@ -156,7 +156,7 @@ export function MarkBearingScreen({ navigation, route }: RootStackScreenProps<'M
               fontWeight={theme.type.bodySemi.weight as '600'}
               opacity={saving || !preview ? 0.4 : 1}
             >
-              Save
+              {saving ? 'Saving…' : 'Save'}
             </Text>
           </Pressable>
         </View>
