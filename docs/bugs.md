@@ -23,7 +23,7 @@ issue with the `feature` label.
 
 | ID | Title | Phase | Severity | Status | Resolution |
 |---|---|---|---|---|---|
-| B-001 | GPS shows no data on real iPhone via Expo Go | 0 | medium | investigating | — |
+| B-001 | SOG / COG display garbage when stationary (iOS -1 sentinel) | 0 | medium | fixed | Negative `coords.speed` / `coords.heading` now treated as unavailable (null) |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).
@@ -34,59 +34,65 @@ Status set: `investigating`, `open`, `fixed`, `wontfix`, `deferred-to-N`.
 
 ## Entries
 
-### B-001 — GPS shows no data on real iPhone via Expo Go
+### B-001 — SOG / COG display garbage when stationary
 
 **Reported:** 2026-04-24 by project owner during first run.
 **Phase:** 0
 **Severity:** medium
-**Status:** investigating
+**Status:** fixed
+**Fix:** commit `TBD` (see git log around 2026-04-24).
 
 **Symptom**
 
-After `npm start` and scanning the Expo Go QR code on a real iPhone, the
-HomeScreen renders but SOG, COG, LAT, and LON all show "—". The bottom
-meta line reads "waiting for fix". No obvious error visible.
+On the HomeScreen:
+- **SOG** reads `-1.9 kn`
+- **COG** reads `359°`
+- **LAT / LON** display correctly (`52° 49.358' N, 004° 30.582' W` — Abersoch)
+- Bottom meta: "GPS 7 m · updated 0 s ago" — GPS fix is fine
+
+Originally presented as "no usable data from iOS". In hindsight, LAT/LON were correct — the misleading values in SOG and COG were the real defect.
 
 **Environment**
 
 - Device: real iPhone via Expo Go
-- Expo Go: latest (whatever App Store ships today)
-- App: bundle bdee883 onwards (scaffold through HomeScreen)
+- Expo SDK 54, expo-location 19.0.8
+- Stationary (phone on a table), GPS fix acquired
 
-**Hypotheses, ordered by likelihood**
+**Root cause**
 
-1. **Expo Go location permission denied or set to "Never".** In Expo Go the
-   permission is owned by Expo Go the app, not OpenRacer. If James (or a
-   previous project) denied location for Expo Go, no fresh prompt will
-   appear in our app — we'd see `permissionStatus = 'denied'` or `'undetermined'`.
-   Fix: Settings → Privacy → Location Services → Expo Go → While Using.
-2. **Phone is indoors with no GPS fix yet.** Cold starts can take 30-60 s
-   even when permission is granted. Expect SOG/COG to be `null` with a
-   valid position + accuracy for the first few seconds.
-3. **Known Expo Go quirk on iOS:** after reloading, location sometimes
-   needs a full kill + reopen, not just a JS reload, before re-subscribing.
-4. **Bug in `useGPS`** — less likely since the code path is standard
-   `watchPositionAsync`. Would show as `error` being non-null.
+iOS's `CLLocation.speed` and `CLLocation.course` return `-1` when the value cannot be reliably measured — typically when the device is stationary and there are no deltas to derive speed or direction from. Apple's documentation: *"A negative value indicates an invalid speed."* expo-location passes this sentinel through unchanged.
 
-**Diagnostic tool**
+My original `useGPS` hook used `reading.coords.speed ?? null`, which only nulls `null` / `undefined`, **not `-1`**. So `-1` m/s flowed into the store, got converted to `-1.9 kn` for display (correct m/s→kn math on wrong input), and `-1°` normalised to `359°` via `formatBearing` (correct modular arithmetic on wrong input).
 
-The DevPanel (top-left "DEV" pill in dev builds, tap to expand) surfaces
-the raw state the hook is in:
+The code was doing exactly what it said; the input assumption was wrong.
 
-- `permission` — `unknown`, `granted`, `denied`, `undetermined`
-- `gps error` — any string from the expo-location library
-- `lat`/`lon`/`sog`/... — raw values, `null` if not yet set
-- `last update` — ISO timestamp or `null`
+**Diagnostic that nailed it**
 
-Open DevPanel. If `permission` is anything other than `granted`, that's
-the issue. If it's `granted` but coords are `null`, it's a fix-acquisition
-problem. If `gps error` has a string, that's a library error we need to fix.
+The DevPanel showed the raw values directly:
 
-**Next steps**
+```
+sog (m/s): -1.000
+cog (°): -1.0
+heading (°): -1.0
+accuracy (m): 7.0
+```
 
-- Project owner opens DevPanel on their phone, reports the row values.
-- Resolution will depend on which hypothesis the data supports.
+Because position and accuracy were valid but speed/heading were literal `-1.000`, the sentinel behaviour was obvious on sight. Without the DevPanel, this would have taken rounds of adding console.logs to a native hook.
 
-**Resolution**
+**Fix**
 
-_Pending_
+Extracted a pure sanitiser `src/hooks/gpsSanitise.ts` that treats any negative `speed` or `heading` as unavailable (null). Jest unit tests cover:
+
+- valid moving reading passes through
+- `speed = -1` only → `sog = null`, `cog/heading` preserved
+- `heading = -1` only → `cog/heading = null`, `sog` preserved
+- both `-1` (the B-001 stationary case) → both null, position + accuracy still valid
+- zero is a valid measured value (not sentinel) and passes through
+
+UI now renders `"—"` for SOG and COG when the device is stationary, which is correct and not misleading.
+
+**Lessons for future marine-sensor work**
+
+- Sensor drivers often use in-band sentinel values (-1, 999, NaN) to signal "unavailable". Always sanitise at the driver boundary.
+- Adding a pure helper + unit tests at the first sign of sensor-data nuance pays back immediately. The next time we see weird numbers, we'll add cases to `gpsSanitise.test.ts`.
+- The DevPanel infrastructure paid for itself on its first day. Keep extending it.

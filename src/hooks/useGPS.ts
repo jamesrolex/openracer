@@ -13,6 +13,10 @@ import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 
 import type { NavigationState } from '../types/signalk';
+import { sanitiseGPSReading } from './gpsSanitise';
+
+export { sanitiseGPSReading } from './gpsSanitise';
+export type { RawGPSCoords } from './gpsSanitise';
 
 export type GPSPermissionStatus = 'unknown' | 'granted' | 'denied' | 'undetermined';
 
@@ -66,17 +70,7 @@ export function useGPS(): UseGPSResult {
           },
           (reading) => {
             if (cancelled) return;
-            setState({
-              position: {
-                latitude: reading.coords.latitude,
-                longitude: reading.coords.longitude,
-              },
-              sog: reading.coords.speed ?? null,
-              cog: reading.coords.heading ?? null,
-              heading: reading.coords.heading ?? null,
-              accuracy: reading.coords.accuracy ?? null,
-              lastUpdate: new Date(reading.timestamp).toISOString(),
-            });
+            setState(sanitiseGPSReading(reading.coords, reading.timestamp));
             setError(null);
           },
         );
