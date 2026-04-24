@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from 'tamagui';
 
 import { DevPanel } from './src/components/DevPanel';
+import { installForegroundHandler } from './src/domain/raceNotifications';
 import { useLiveTelemetry } from './src/hooks/useLiveTelemetry';
 import { RootNavigator } from './src/navigation';
 import { seedMarksIfEmpty } from './src/stores/marksSeed';
@@ -21,6 +22,7 @@ export default function App() {
   useLiveTelemetry();
 
   useEffect(() => {
+    installForegroundHandler();
     void (async () => {
       await seedMarksIfEmpty();
       await refreshMarks();

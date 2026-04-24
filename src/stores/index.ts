@@ -2,6 +2,7 @@ export * from './useBoatStore';
 export * from './useSettingsStore';
 export * from './useMarksStore';
 export * from './useCoursesStore';
+export * from './useRaceStore';
 export * from './useCommitteeTrustStore';
 export * from './useCommitteeIdentityStore';
 export * from './sqliteStorage';

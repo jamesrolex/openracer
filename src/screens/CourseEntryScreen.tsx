@@ -30,6 +30,7 @@ import type { RootStackScreenProps } from '../navigation';
 import { useBoatStore } from '../stores/useBoatStore';
 import { useCoursesStore } from '../stores/useCoursesStore';
 import { useMarksStore } from '../stores/useMarksStore';
+import { useRaceStore } from '../stores/useRaceStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
 import type { CourseTemplateId, Leg } from '../types/course';
@@ -187,12 +188,15 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
     }
   }
 
-  function handleArmTimer() {
-    Alert.alert(
-      'Arm timer?',
-      'Race mode activates and the 5-minute countdown starts. Comes in Week 7.',
-      [{ text: 'OK' }],
-    );
+  async function handleArmTimer() {
+    const id = await ensureDraft();
+    // Arm for a T-5 countdown starting roughly now. syncToNextWholeMinute
+    // inside the store will snap the exact gun time to the next whole
+    // minute, the racer's classic move.
+    const gun = new Date(Date.now() + 5 * 60_000);
+    useRaceStore.getState().arm(gun, id);
+    useBoatStore.getState().setMode('race');
+    navigation.navigate('RaceTimer');
   }
 
   async function handleDiscard() {
@@ -375,7 +379,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
             </View>
           </Pressable>
           <Pressable
-            onPress={handleArmTimer}
+            onPress={() => void handleArmTimer()}
             disabled={!ready}
             style={{ flex: 1 }}
             hitSlop={4}

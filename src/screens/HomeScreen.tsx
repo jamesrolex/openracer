@@ -24,9 +24,13 @@ import { BigNumber } from '../components/BigNumber';
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { CourseStrip } from '../components/CourseStrip';
 import { ModeToggle } from '../components/ModeToggle';
+import { StartLineReadout } from '../components/StartLineReadout';
+import { makeSnapshot } from '../domain/raceTimer';
 import type { RootStackScreenProps } from '../navigation';
 import { useBoatStore } from '../stores/useBoatStore';
 import { useCoursesStore } from '../stores/useCoursesStore';
+import { useMarksStore } from '../stores/useMarksStore';
+import { useRaceStore } from '../stores/useRaceStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
 import { formatBearing, formatDistance, formatLatLon, metresPerSecondToKnots } from '../utils/format';
@@ -39,6 +43,9 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
   const theme = getTheme(nightMode ? 'night' : 'day');
 
   const draft = useCoursesStore((state) => state.activeDraft);
+  const marks = useMarksStore((state) => state.marks);
+  const sequenceStartTime = useRaceStore((state) => state.sequenceStartTime);
+  const raceSequence = useRaceStore((state) => state.sequence);
 
   const position = useBoatStore((state) => state.position);
   const sog = useBoatStore((state) => state.sog);
@@ -86,6 +93,22 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
           <ConnectionBadge mode={connectivity} variant={variant} />
           <ModeToggle mode={mode} onChange={setMode} variant={variant} />
         </View>
+
+        {sequenceStartTime ? (
+          <View marginBottom={theme.space.md}>
+            <StartLineReadout
+              course={draft}
+              marks={marks}
+              position={position}
+              cog={cog}
+              sog={sog}
+              urgent={
+                makeSnapshot(sequenceStartTime, new Date(), raceSequence).band === 'urgent'
+              }
+              variant={variant}
+            />
+          </View>
+        ) : null}
 
         {draft ? (
           <View marginBottom={theme.space.md}>
@@ -147,12 +170,21 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
         </Text>
 
         <View flexDirection="row" marginTop={theme.space.sm}>
-          <HomeButton
-            label="Marks"
-            onPress={() => navigation.navigate('MarkLibrary')}
-            variant="primary"
-            theme={theme}
-          />
+          {sequenceStartTime ? (
+            <HomeButton
+              label="Timer"
+              onPress={() => navigation.navigate('RaceTimer')}
+              variant="primary"
+              theme={theme}
+            />
+          ) : (
+            <HomeButton
+              label="Marks"
+              onPress={() => navigation.navigate('MarkLibrary')}
+              variant="primary"
+              theme={theme}
+            />
+          )}
           <HomeButton
             label="Scan QR"
             onPress={() => navigation.navigate('ScanCoursePush')}
@@ -160,8 +192,12 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
             theme={theme}
           />
           <HomeButton
-            label="Committee"
-            onPress={() => navigation.navigate('CommitteeIdentity')}
+            label={sequenceStartTime ? 'Marks' : 'Committee'}
+            onPress={() =>
+              sequenceStartTime
+                ? navigation.navigate('MarkLibrary')
+                : navigation.navigate('CommitteeIdentity')
+            }
             variant="outline"
             theme={theme}
           />
