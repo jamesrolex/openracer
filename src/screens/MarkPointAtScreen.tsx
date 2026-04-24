@@ -2,15 +2,13 @@
  * MarkPointAtScreen — Method 7: point the phone at a mark to capture a
  * compass bearing from current GPS, move, capture again, triangulate.
  *
- * Two-step wizard:
- *  1) "Stand still, point at the mark, tap Capture" — records (GPS, bearing A).
- *  2) "Move at least 20m and do it again" — records (GPS, bearing B), runs
- *     triangulate, saves a single-race-temporary mark at the computed
- *     position.
- *
- * Method 7 is inherently approximate: phone compass is ±5° under good
- * conditions, worse near metal. We surface the computed accuracy so
- * sailors can sanity-check before saving.
+ * UX rebuild (Apr 2026): front and centre is a live compass dial with a
+ * red crosshair — aim the top edge of the phone at the mark; the number
+ * under the crosshair is the bearing. After the first capture a green
+ * wedge locks onto the dial at the captured bearing so you can see what
+ * you pointed at. The step banner flips to amber "STEP 2 OF 2" and the
+ * copy explicitly says "walk ≥ 20 m across" (not "move 20 m" — across is
+ * the useful direction). The capture button label changes accordingly.
  */
 
 import * as Haptics from 'expo-haptics';
@@ -19,6 +17,7 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input, Text, View } from 'tamagui';
 
+import { CompassDial } from '../components/CompassDial';
 import { defaultValidityFor } from '../domain/markLifecycle';
 import { describeTriangulateError, triangulate, type Sighting } from '../domain/triangulate';
 import { useCompass } from '../hooks/useCompass';
@@ -39,10 +38,13 @@ interface CapturedSighting {
   fixAccuracyMetres: number | null;
 }
 
+const MIN_BASELINE_METRES = 20;
+
 export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'MarkPointAt'>) {
   const legId = route.params.legId;
   const nightMode = useSettingsStore((s) => s.nightMode);
   const theme = getTheme(nightMode ? 'night' : 'day');
+  const variant = nightMode ? 'night' : 'day';
 
   const compass = useCompass(true);
   const position = useBoatStore((s) => s.position);
@@ -57,12 +59,16 @@ export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'M
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const headingDisplay =
-    compass.trueHeading !== null ? `${Math.round(compass.trueHeading)}°` : '—';
+  const step: 1 | 2 = sightingA ? 2 : 1;
+
+  const movedSinceA = sightingA && position
+    ? distanceBetween(sightingA.position, position)
+    : 0;
+  const movedEnough = movedSinceA >= MIN_BASELINE_METRES;
 
   function capture() {
     if (!position || compass.trueHeading === null) {
-      setError('Waiting for GPS and compass — try again in a second.');
+      setError('Waiting for GPS and compass — hold still for a second and try again.');
       return;
     }
     const sighting: CapturedSighting = {
@@ -71,6 +77,7 @@ export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'M
       fixAccuracyMetres: accuracy,
     };
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     if (!sightingA) {
       setSightingA(sighting);
       setError(null);
@@ -79,22 +86,25 @@ export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'M
 
     // Second sighting — must be far enough away from the first.
     const moved = distanceBetween(sightingA.position, sighting.position);
-    if (moved < 20) {
-      setError(`Move at least 20 m from the first sighting (you've moved ${Math.round(moved)} m).`);
+    if (moved < MIN_BASELINE_METRES) {
+      setError(
+        `You’ve only moved ${Math.round(moved)} m. Walk at least ${MIN_BASELINE_METRES} m across from the first sighting, then try again.`,
+      );
       return;
     }
 
+    const compassAcc = compass.needsCalibration ? 15 : 5;
     const a: Sighting = {
       position: sightingA.position,
       bearing: sightingA.bearing,
       fixAccuracyMetres: sightingA.fixAccuracyMetres ?? undefined,
-      compassAccuracyDegrees: compass.needsCalibration ? 15 : 5,
+      compassAccuracyDegrees: compassAcc,
     };
     const b: Sighting = {
       position: sighting.position,
       bearing: sighting.bearing,
       fixAccuracyMetres: sighting.fixAccuracyMetres ?? undefined,
-      compassAccuracyDegrees: compass.needsCalibration ? 15 : 5,
+      compassAccuracyDegrees: compassAcc,
     };
     const result = triangulate(a, b);
     if (!result.ok) {
@@ -160,7 +170,21 @@ export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'M
     }
   }
 
-  const step = sightingA ? 2 : 1;
+  const stepChipColor =
+    step === 1 ? theme.accent : movedEnough ? theme.status.success : theme.status.warning;
+
+  const captureDisabled =
+    busy ||
+    !position ||
+    compass.trueHeading === null ||
+    (step === 2 && !movedEnough);
+
+  const captureLabel =
+    step === 1
+      ? 'Capture bearing 1'
+      : movedEnough
+        ? 'Capture bearing 2 + triangulate'
+        : `Walk ${Math.max(1, MIN_BASELINE_METRES - Math.round(movedSinceA))} m more`;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
@@ -196,86 +220,112 @@ export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'M
           <View width={44} />
         </View>
 
+        {/* Big step banner — colour-coded so the sailor knows exactly where they are. */}
+        <View
+          paddingVertical={theme.space.sm}
+          paddingHorizontal={theme.space.md}
+          borderRadius={theme.radius.full}
+          backgroundColor={stepChipColor}
+          alignItems="center"
+          marginBottom={theme.space.md}
+        >
+          <Text
+            color={theme.bg}
+            fontSize={theme.type.label.size}
+            fontWeight="700"
+            letterSpacing={theme.type.label.letterSpacing}
+          >
+            {step === 1 ? 'STEP 1 OF 2 — AIM + CAPTURE' : 'STEP 2 OF 2 — WALK ACROSS, AIM AGAIN'}
+          </Text>
+        </View>
+
         <Text
-          color={theme.text.muted}
+          color={theme.text.secondary}
           fontSize={theme.type.body.size}
           lineHeight={theme.type.body.lineHeight}
+          textAlign="center"
           marginBottom={theme.space.md}
         >
           {step === 1
-            ? 'Hold your phone level, top edge pointing at the mark, and tap Capture. You\u2019ll then move at least 20 m and capture a second bearing.'
-            : 'Move at least 20 m from where you took the first bearing, point at the same mark, and tap Capture.'}
+            ? 'Hold your phone level, top edge at the mark. Keep the number under the red crosshair steady, then tap Capture.'
+            : movedEnough
+              ? `Good — ${Math.round(movedSinceA)} m across. Aim at the same mark (the green tick shows where you pointed last) and capture.`
+              : `Walk at least ${MIN_BASELINE_METRES} m perpendicular to your first sighting, then aim at the same mark. ${Math.round(movedSinceA)} m so far.`}
         </Text>
 
-        <Label theme={theme}>{`Step ${step} of 2 — live readings`}</Label>
+        {/* The main visual — a hand-bearing compass dial. */}
+        <View alignItems="center" marginBottom={theme.space.md}>
+          <CompassDial
+            heading={compass.trueHeading}
+            firstBearing={sightingA?.bearing ?? null}
+            needsCalibration={compass.needsCalibration}
+            variant={variant}
+          />
+        </View>
+
+        {/* Legend row — so first-timers know what each colour means. */}
         <View
-          padding={theme.space.md}
-          borderRadius={theme.radius.lg}
+          flexDirection="row"
+          justifyContent="space-around"
+          marginBottom={theme.space.md}
+        >
+          <LegendChip
+            theme={theme}
+            colour={
+              compass.needsCalibration ? theme.status.warning : theme.status.danger
+            }
+            label="Where you're aiming"
+          />
+          {sightingA ? (
+            <LegendChip
+              theme={theme}
+              colour={theme.status.success}
+              label={`First bearing locked: ${Math.round(sightingA.bearing)}°T`}
+            />
+          ) : null}
+        </View>
+
+        {/* GPS status — compact, non-distracting. */}
+        <View
+          flexDirection="row"
+          justifyContent="space-between"
+          padding={theme.space.sm}
+          borderRadius={theme.radius.md}
           borderColor={theme.border}
           borderWidth={1}
           marginBottom={theme.space.md}
         >
-          <Row
-            theme={theme}
-            label="Compass (true)"
-            value={headingDisplay}
-            warn={compass.needsCalibration}
-          />
-          <Row
-            theme={theme}
-            label="Compass accuracy"
-            value={
-              compass.accuracy === null
-                ? '—'
-                : compass.accuracy >= 2
-                  ? 'Low — calibrate'
-                  : compass.accuracy >= 1
-                    ? 'Medium'
-                    : 'Good'
-            }
-          />
-          <Row
-            theme={theme}
-            label="GPS fix"
-            value={
-              accuracy === null
-                ? 'Waiting…'
-                : `±${formatDistance(accuracy, 'm').replace(' m', '')} m`
-            }
-          />
-          <Row
-            theme={theme}
-            label="Position"
-            value={
-              position
+          <Text color={theme.text.muted} fontSize={theme.type.caption.size}>
+            GPS {accuracy === null ? 'waiting…' : `±${formatDistance(accuracy, 'm').replace(' m', '')} m`}
+          </Text>
+          {step === 2 ? (
+            <Text
+              color={movedEnough ? theme.status.success : theme.status.warning}
+              fontSize={theme.type.caption.size}
+              fontWeight={theme.type.bodySemi.weight as '600'}
+            >
+              Moved {Math.round(movedSinceA)} m / need {MIN_BASELINE_METRES} m
+            </Text>
+          ) : (
+            <Text color={theme.text.muted} fontSize={theme.type.caption.size}>
+              {position
                 ? formatLatLon(position.latitude, position.longitude, 'dmm')
-                : 'Waiting…'
-            }
-          />
+                : 'Waiting for fix…'}
+            </Text>
+          )}
         </View>
 
-        {sightingA ? (
-          <View
-            padding={theme.space.md}
-            borderRadius={theme.radius.md}
-            borderColor={theme.status.success}
-            borderWidth={1}
+        {compass.needsCalibration ? (
+          <Text
+            color={theme.status.warning}
+            fontSize={theme.type.caption.size}
+            lineHeight={theme.type.caption.lineHeight}
             marginBottom={theme.space.md}
+            textAlign="center"
           >
-            <Text
-              color={theme.text.muted}
-              fontSize={theme.type.micro.size}
-              fontWeight={theme.type.micro.weight as '600'}
-              letterSpacing={theme.type.micro.letterSpacing}
-              marginBottom={theme.space.xs}
-            >
-              FIRST SIGHTING LOCKED
-            </Text>
-            <Text color={theme.text.primary} fontSize={theme.type.caption.size}>
-              {Math.round(sightingA.bearing)}°T from{' '}
-              {formatLatLon(sightingA.position.latitude, sightingA.position.longitude, 'dmm')}
-            </Text>
-          </View>
+            Compass needs calibration — trace a figure-8 with your phone, then
+            try again. Readings may be off by a few degrees until you do.
+          </Text>
         ) : null}
 
         <Label theme={theme}>Name (optional)</Label>
@@ -307,44 +357,42 @@ export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'M
         ) : null}
 
         {compass.error ? (
-          <Text color={theme.status.danger} fontSize={theme.type.caption.size}>
+          <Text
+            color={theme.status.danger}
+            fontSize={theme.type.caption.size}
+            marginBottom={theme.space.sm}
+          >
             Compass: {compass.error}
           </Text>
         ) : null}
 
-        {compass.needsCalibration ? (
-          <Text color={theme.status.warning} fontSize={theme.type.caption.size} marginBottom={theme.space.md}>
-            iOS needs calibration — trace a figure-8 with your phone, then
-            try again. Until then we&apos;re using the magnetic heading which
-            may be off by a few degrees.
-          </Text>
-        ) : null}
-
-        <Pressable
-          onPress={capture}
-          disabled={busy || !position || compass.trueHeading === null}
-          hitSlop={8}
-        >
+        <Pressable onPress={capture} disabled={captureDisabled} hitSlop={8}>
           <View
             paddingVertical={theme.space.md}
             paddingHorizontal={theme.space.md}
             borderRadius={theme.radius.lg}
             backgroundColor={theme.accent}
             alignItems="center"
-            opacity={busy || !position || compass.trueHeading === null ? 0.4 : 1}
+            opacity={captureDisabled ? 0.4 : 1}
           >
             <Text
               color={theme.bg}
-              fontSize={theme.type.body.size}
-              fontWeight={theme.type.bodySemi.weight as '700'}
+              fontSize={theme.type.bodySemi.size}
+              fontWeight="700"
             >
-              {step === 1 ? 'Capture first bearing' : 'Capture + triangulate'}
+              {busy ? 'Saving…' : captureLabel}
             </Text>
           </View>
         </Pressable>
 
         {sightingA ? (
-          <Pressable onPress={() => { setSightingA(null); setError(null); }} hitSlop={8}>
+          <Pressable
+            onPress={() => {
+              setSightingA(null);
+              setError(null);
+            }}
+            hitSlop={8}
+          >
             <Text
               color={theme.text.muted}
               fontSize={theme.type.caption.size}
@@ -352,7 +400,7 @@ export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'M
               textAlign="center"
               marginTop={theme.space.sm}
             >
-              Reset and redo first bearing
+              Redo first bearing
             </Text>
           </Pressable>
         ) : null}
@@ -381,28 +429,26 @@ function Label({
   );
 }
 
-function Row({
+function LegendChip({
   theme,
+  colour,
   label,
-  value,
-  warn = false,
 }: {
   theme: ReturnType<typeof getTheme>;
+  colour: string;
   label: string;
-  value: string;
-  warn?: boolean;
 }) {
   return (
-    <View flexDirection="row" justifyContent="space-between" paddingVertical={2}>
-      <Text color={theme.text.muted} fontSize={theme.type.caption.size}>
+    <View flexDirection="row" alignItems="center">
+      <View
+        width={10}
+        height={10}
+        borderRadius={5}
+        backgroundColor={colour}
+        marginRight={theme.space.xs}
+      />
+      <Text color={theme.text.secondary} fontSize={theme.type.caption.size}>
         {label}
-      </Text>
-      <Text
-        color={warn ? theme.status.warning : theme.text.primary}
-        fontSize={theme.type.caption.size}
-        style={{ fontFamily: 'Menlo' }}
-      >
-        {value}
       </Text>
     </View>
   );

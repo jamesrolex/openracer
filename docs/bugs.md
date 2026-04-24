@@ -35,6 +35,7 @@ issue with the `feature` label.
 | B-010 | "Marks →" link on HomeScreen is hard to press (12 pt text, no background, ~15 pt tap target) | 1 | medium | fixed | Replaced bare text link with a pill-shaped button using accent fill and 44 pt minimum tap target per HIG |
 | B-011 | Text inputs on MarkEdit + MarkLibrary are squashed (Tamagui `size="$md"` collides with my 8-point spacing scale → 16 pt-tall input) | 1 | medium | fixed | Dropped Tamagui `size` prop on `Input` everywhere; inputs now use explicit `height={44}`, `paddingHorizontal`, `fontSize` matching the design-system body scale |
 | B-012 | Rounding direction (port / starboard) not shown on CourseEntry leg rows — data model has it but UI never rendered it | 1 | medium | fixed | LegRow now shows a tappable P / S chip that toggles per-leg rounding; CourseStrip inherits the same marker under each rounding chip |
+| B-013 | Point-at-mark second bearing is confusing — user can't tell which sighting they're capturing, no visual aid for aiming | 1 | high | fixed | Rebuilt MarkPointAtScreen around a live CompassDial with a fixed red crosshair and a persistent green wedge for the first-sighting bearing; added a colour-coded "STEP 1/2 OF 2" banner that flips amber → green when enough distance has been walked |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).
@@ -157,3 +158,66 @@ The error message itself listed both what it saw and what it wanted, so no furth
 
 - Tamagui's token-shape contract is enforced at runtime, not typecheck. Bundle-builds will succeed, audit will pass, and the app still crashes on boot.
 - For the rest of Phase 1, any new createTamagui field gets a manual `expo start` sanity check, not just `npm run audit`.
+
+### B-013 — Point-at-mark second bearing is confusing
+
+**Symptom**
+
+On-device feedback from the product owner after first real usage:
+"adding the second bearing was confusing". The original MarkPointAtScreen
+showed a plain list of live readings (heading, accuracy, GPS fix) with a
+one-line step label and a "FIRST SIGHTING LOCKED" panel after the first
+capture. No visual aid for aiming, no indication that the phone's top
+edge was the bearing reference, no persistent view of where the first
+sighting had pointed.
+
+**Environment**
+
+- Expo Go on iPhone 15 Pro
+- Method 7 (compass + triangulation) flow during on-device dogfooding
+
+**Root cause**
+
+The screen was data-dense but visually flat. The "two bearings to
+triangulate" mental model is simple but needs to be *shown*, not
+labelled. Without a visual compass, the sailor has to:
+
+1. Mentally map the live heading number to a direction.
+2. Remember what bearing the first sighting was pointing at (and
+   whether they pointed at the same mark).
+3. Trust that their current aim is the same as before, across a
+   position shift of ≥20 m.
+
+The second bearing felt tacked on because the screen didn't explain
+its own state visually.
+
+**Fix**
+
+Rebuilt around a `CompassDial` SVG component that sits front and centre.
+Three mechanics do the heavy lifting:
+
+1. **Rotating compass rose** — the whole dial rotates so the current
+   true heading sits under a fixed red crosshair at the top. Aim the
+   phone's top edge at the mark; the number under the crosshair IS
+   the bearing.
+2. **Persistent green wedge** at the first-sighting bearing once step
+   1 is captured. The sailor can see "I pointed that way last time"
+   as they walk to position 2.
+3. **Colour-coded step banner** — the pill at the top flips from
+   accent blue (step 1) to amber (step 2, not moved enough) to green
+   (step 2, baseline satisfied). Copy underneath updates to match:
+   "walk ≥ 20 m perpendicular" during step 2 with a live distance
+   counter.
+
+Button label also changes with context ("Capture bearing 1" → "Walk
+N m more" → "Capture bearing 2 + triangulate") so the next action is
+always explicit.
+
+**Lessons**
+
+- Triangulation is a visual concept. Showing it with a fixed crosshair
+  + rotating rose removes most of the cognitive load.
+- Colour-coded step banners beat text step labels when the flow is
+  linear but has gating conditions (distance moved, in this case).
+- The "what does the top edge of the phone mean" mental model is
+  load-bearing — the red crosshair at 12 o'clock makes it literal.
