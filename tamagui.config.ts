@@ -65,12 +65,27 @@ const colourTokens = {
   nightAccentDim: colours.night.accentDim,
 } as const;
 
+// zIndex keys must mirror the space/size/radius scale (Tamagui enforces
+// symmetric key sets at runtime). We reuse the same names even though only
+// a few values make semantic sense for stacking.
+const zIndexTokens = {
+  xxs: 1,
+  xs: 10,
+  sm: 100,
+  md: 200,
+  lg: 300,
+  xl: 500,
+  xxl: 1000,
+  huge: 9999,
+  true: 100,
+} as const;
+
 export const tokens = createTokens({
   color: colourTokens,
   space: spaceTokens,
   size: sizeTokens,
   radius: radiusTokens,
-  zIndex: { 0: 0, 1: 100, 2: 200, 3: 300 },
+  zIndex: zIndexTokens,
 });
 
 const interFont = createFont({

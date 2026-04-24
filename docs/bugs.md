@@ -31,6 +31,7 @@ issue with the `feature` label.
 | B-006 | Screenshot → AirDrop → paste loop for diagnostics is slow | 0 | medium | fixed | DevPanel gained a "Copy" button that puts the rows on the clipboard via `expo-clipboard` |
 | B-007 | LAT/LON show signed decimals without hemisphere letters | 0 | medium | fixed | HomeScreen now uses `formatLatLon(..., 'decimal')` — e.g. `52.8226° N`, `4.5097° W` |
 | B-008 | LON still wraps on iPhone width because `formatLatLon(decimal)` left-pads to 3 digits (`004.5097° W`) | 0 | low | fixed | Decimal format no longer pads the whole-degree part — padding stays on DMM/DMS per marine convention but chart-plotter-style decimal has no padding |
+| B-009 | Tamagui `createTamagui` crashes on boot: zIndex tokens use numeric keys (`$0..$3`) while other scales use `$xxs..$huge` | 1 | high | fixed | zIndex keys realigned to the shared scale (`xxs..huge`); Tamagui 1.x enforces symmetric token keys at runtime, not at typecheck time |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).
@@ -103,3 +104,53 @@ UI now renders `"—"` for SOG and COG when the device is stationary, which is c
 - Sensor drivers often use in-band sentinel values (-1, 999, NaN) to signal "unavailable". Always sanitise at the driver boundary.
 - Adding a pure helper + unit tests at the first sign of sensor-data nuance pays back immediately. The next time we see weird numbers, we'll add cases to `gpsSanitise.test.ts`.
 - The DevPanel infrastructure paid for itself on its first day. Keep extending it.
+
+---
+
+### B-009 — Tamagui `createTamagui` crashes on boot (zIndex token shape)
+
+**Reported:** 2026-04-24 by project owner on first launch after Tamagui migration.
+**Phase:** 1 (Week 1)
+**Severity:** high — app fails to render past the provider.
+**Status:** fixed
+**Fix:** commit on 2026-04-24 — zIndex keys realigned to the shared scale.
+
+**Symptom**
+
+On app boot, red screen:
+
+```
+createTamagui() invalid tokens.zIndex:
+Received: $0, $1, $2, $3
+Expected a subset of: $xxs, $xs, $sm, $md, $lg, $xl, $xxl, $huge, $true
+```
+
+App never reaches the HomeScreen.
+
+**Root cause**
+
+Tamagui 1.x enforces that every token scale (space, size, radius, zIndex) shares the **same key set**, so any prop can resolve against any scale. The config initially defined `zIndex: { 0, 1, 2, 3 }` while the other scales used `xxs, xs, sm, md, lg, xl, xxl, huge, true`. The runtime check threw before the provider mounted.
+
+Typecheck did NOT catch it — Tamagui's TS types accept any zIndex shape; only the runtime validator enforces symmetry.
+
+**Fix**
+
+`tamagui.config.ts` now uses the shared key set for zIndex too:
+
+```ts
+const zIndexTokens = {
+  xxs: 1, xs: 10, sm: 100, md: 200, lg: 300,
+  xl: 500, xxl: 1000, huge: 9999, true: 100,
+};
+```
+
+Values are a sensible progression; only a few map to anything semantic in-app.
+
+**Diagnostic that nailed it**
+
+The error message itself listed both what it saw and what it wanted, so no further digging was needed. Worth remembering: Tamagui's runtime errors are terse but informative — read them literally.
+
+**Lessons**
+
+- Tamagui's token-shape contract is enforced at runtime, not typecheck. Bundle-builds will succeed, audit will pass, and the app still crashes on boot.
+- For the rest of Phase 1, any new createTamagui field gets a manual `expo start` sanity check, not just `npm run audit`.
