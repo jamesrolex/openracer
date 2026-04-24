@@ -5,7 +5,7 @@
  * Rule: two per row max on a HomeScreen grid.
  */
 
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'tamagui';
 
 import type { Theme, ThemeVariant } from '../theme/theme';
 import { getTheme } from '../theme/theme';
@@ -36,20 +36,57 @@ export function BigNumber({
   variant = 'day',
 }: BigNumberProps) {
   const theme = getTheme(variant);
-  const styles = buildStyles(theme, emphasis, stale);
+  const { valueColour, valueSize } = resolveEmphasis(theme, emphasis);
 
   return (
-    <View style={styles.root} accessibilityRole="text" accessibilityLabel={`${label} ${value}${unit ? ` ${unit}` : ''}`}>
-      <Text style={styles.label}>{label.toUpperCase()}</Text>
-      <Text style={styles.value} allowFontScaling={false}>
+    <View
+      alignItems="center"
+      justifyContent="center"
+      paddingVertical={theme.space.sm}
+      paddingHorizontal={theme.space.sm}
+      flex={1}
+      minWidth={0}
+      opacity={stale ? 0.4 : 1}
+      accessibilityRole="text"
+      accessibilityLabel={`${label} ${value}${unit ? ` ${unit}` : ''}`}
+    >
+      <Text
+        color={theme.text.muted}
+        fontSize={theme.type.label.size}
+        fontWeight={theme.type.label.weight as '600'}
+        lineHeight={theme.type.label.lineHeight}
+        letterSpacing={theme.type.label.letterSpacing}
+        marginBottom={theme.space.xs}
+      >
+        {label.toUpperCase()}
+      </Text>
+      <Text
+        color={valueColour}
+        fontSize={valueSize.size}
+        fontWeight={valueSize.weight as '700' | '600'}
+        lineHeight={valueSize.size}
+        letterSpacing={'letterSpacing' in valueSize ? valueSize.letterSpacing : 0}
+        textAlign="center"
+        allowFontScaling={false}
+      >
         {String(value)}
       </Text>
-      {unit ? <Text style={styles.unit}>{unit}</Text> : null}
+      {unit ? (
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.caption.size}
+          fontWeight={theme.type.caption.weight as '400'}
+          lineHeight={theme.type.caption.lineHeight}
+          marginTop={theme.space.xs}
+        >
+          {unit}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
-function buildStyles(theme: Theme, emphasis: BigNumberEmphasis, stale: boolean) {
+function resolveEmphasis(theme: Theme, emphasis: BigNumberEmphasis) {
   const valueColour =
     emphasis === 'primary'
       ? theme.text.primary
@@ -58,40 +95,11 @@ function buildStyles(theme: Theme, emphasis: BigNumberEmphasis, stale: boolean) 
         : theme.text.muted;
 
   const valueSize =
-    emphasis === 'primary' ? theme.type.monster : emphasis === 'secondary' ? theme.type.large : theme.type.h2;
+    emphasis === 'primary'
+      ? theme.type.monster
+      : emphasis === 'secondary'
+        ? theme.type.large
+        : theme.type.h2;
 
-  return StyleSheet.create({
-    root: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: theme.space.sm,
-      paddingHorizontal: theme.space.sm,
-      minWidth: 0,
-      flex: 1,
-      opacity: stale ? 0.4 : 1,
-    },
-    label: {
-      color: theme.text.muted,
-      fontSize: theme.type.label.size,
-      fontWeight: theme.type.label.weight as '600',
-      lineHeight: theme.type.label.lineHeight,
-      letterSpacing: theme.type.label.letterSpacing,
-      marginBottom: theme.space.xs,
-    },
-    value: {
-      color: valueColour,
-      fontSize: valueSize.size,
-      fontWeight: valueSize.weight as '700' | '600',
-      lineHeight: valueSize.size,
-      letterSpacing: 'letterSpacing' in valueSize ? valueSize.letterSpacing : 0,
-      textAlign: 'center',
-    },
-    unit: {
-      color: theme.text.muted,
-      fontSize: theme.type.caption.size,
-      fontWeight: theme.type.caption.weight as '400',
-      lineHeight: theme.type.caption.lineHeight,
-      marginTop: theme.space.xs,
-    },
-  });
+  return { valueColour, valueSize };
 }

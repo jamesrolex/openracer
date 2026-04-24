@@ -9,7 +9,8 @@
 
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
+import { Text, View } from 'tamagui';
 
 import { useBoatStore } from '../stores/useBoatStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -47,108 +48,43 @@ export function DevPanel({ extra }: DevPanelProps) {
     ...(extra ?? []),
   ];
 
-  const styles = StyleSheet.create({
-    pill: {
-      position: 'absolute',
-      bottom: 32,
-      right: 16,
-      backgroundColor: theme.surface,
-      borderColor: theme.border,
-      borderWidth: 1,
-      borderRadius: theme.radius.full,
-      paddingHorizontal: theme.space.sm,
-      paddingVertical: theme.space.xs,
-      zIndex: 9999,
-      flexDirection: 'row',
-      alignItems: 'center',
-      ...theme.elevation.card,
-    },
-    pillDot: {
-      width: 6,
-      height: 6,
-      borderRadius: theme.radius.full,
-      backgroundColor: boat.permissionStatus === 'granted' ? theme.status.success : theme.status.warning,
-      marginRight: theme.space.xs,
-    },
-    pillText: {
-      color: theme.text.secondary,
-      fontSize: theme.type.micro.size,
-      fontWeight: theme.type.micro.weight as '600',
-      letterSpacing: theme.type.micro.letterSpacing,
-    },
-    sheet: {
-      position: 'absolute',
-      top: 60,
-      left: 16,
-      right: 16,
-      maxHeight: 400,
-      backgroundColor: theme.surface,
-      borderColor: theme.border,
-      borderWidth: 1,
-      borderRadius: theme.radius.lg,
-      paddingHorizontal: theme.space.md,
-      paddingVertical: theme.space.sm,
-      zIndex: 9999,
-      ...theme.elevation.modal,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: theme.space.sm,
-    },
-    headerTitle: {
-      color: theme.text.primary,
-      fontSize: theme.type.h3.size,
-      fontWeight: theme.type.h3.weight as '600',
-    },
-    headerActions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    copyButton: {
-      paddingHorizontal: theme.space.sm,
-      paddingVertical: theme.space.xs,
-      borderRadius: theme.radius.md,
-      backgroundColor: copied ? theme.status.success : theme.accent,
-      marginRight: theme.space.sm,
-    },
-    copyButtonText: {
-      color: theme.bg,
-      fontSize: theme.type.caption.size,
-      fontWeight: theme.type.bodySemi.weight as '600',
-    },
-    headerClose: {
-      color: theme.text.muted,
-      fontSize: theme.type.body.size,
-      fontWeight: theme.type.bodySemi.weight as '600',
-      paddingHorizontal: theme.space.sm,
-    },
-    row: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingVertical: 2,
-    },
-    rowLabel: {
-      color: theme.text.muted,
-      fontSize: theme.type.caption.size,
-      fontWeight: theme.type.bodySemi.weight as '600',
-      flex: 1,
-    },
-    rowValue: {
-      color: theme.text.primary,
-      fontSize: theme.type.caption.size,
-      fontFamily: 'Menlo',
-      flex: 2,
-      textAlign: 'right',
-    },
-  });
+  const dotColour =
+    boat.permissionStatus === 'granted' ? theme.status.success : theme.status.warning;
 
   if (!expanded) {
     return (
-      <Pressable onPress={() => setExpanded(true)} style={styles.pill} accessibilityLabel="Open dev panel">
-        <View style={styles.pillDot} />
-        <Text style={styles.pillText}>DEV</Text>
+      <Pressable onPress={() => setExpanded(true)} accessibilityLabel="Open dev panel">
+        <View
+          position="absolute"
+          bottom={32}
+          right={16}
+          backgroundColor={theme.surface}
+          borderColor={theme.border}
+          borderWidth={1}
+          borderRadius={theme.radius.full}
+          paddingHorizontal={theme.space.sm}
+          paddingVertical={theme.space.xs}
+          zIndex={9999}
+          flexDirection="row"
+          alignItems="center"
+          style={theme.elevation.card}
+        >
+          <View
+            width={6}
+            height={6}
+            borderRadius={theme.radius.full}
+            backgroundColor={dotColour}
+            marginRight={theme.space.xs}
+          />
+          <Text
+            color={theme.text.secondary}
+            fontSize={theme.type.micro.size}
+            fontWeight={theme.type.micro.weight as '600'}
+            letterSpacing={theme.type.micro.letterSpacing}
+          >
+            DEV
+          </Text>
+        </View>
       </Pressable>
     );
   }
@@ -161,27 +97,83 @@ export function DevPanel({ extra }: DevPanelProps) {
   }
 
   return (
-    <View style={styles.sheet}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dev diagnostics</Text>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={copyDiagnostics}
-            style={styles.copyButton}
-            accessibilityLabel="Copy diagnostics to clipboard"
-          >
-            <Text style={styles.copyButtonText}>{copied ? 'Copied' : 'Copy'}</Text>
+    <View
+      position="absolute"
+      top={60}
+      left={16}
+      right={16}
+      maxHeight={400}
+      backgroundColor={theme.surface}
+      borderColor={theme.border}
+      borderWidth={1}
+      borderRadius={theme.radius.lg}
+      paddingHorizontal={theme.space.md}
+      paddingVertical={theme.space.sm}
+      zIndex={9999}
+      style={theme.elevation.modal}
+    >
+      <View
+        flexDirection="row"
+        justifyContent="space-between"
+        alignItems="center"
+        marginBottom={theme.space.sm}
+      >
+        <Text
+          color={theme.text.primary}
+          fontSize={theme.type.h3.size}
+          fontWeight={theme.type.h3.weight as '600'}
+        >
+          Dev diagnostics
+        </Text>
+        <View flexDirection="row" alignItems="center">
+          <Pressable onPress={copyDiagnostics} accessibilityLabel="Copy diagnostics to clipboard">
+            <View
+              paddingHorizontal={theme.space.sm}
+              paddingVertical={theme.space.xs}
+              borderRadius={theme.radius.md}
+              backgroundColor={copied ? theme.status.success : theme.accent}
+              marginRight={theme.space.sm}
+            >
+              <Text
+                color={theme.bg}
+                fontSize={theme.type.caption.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </Text>
+            </View>
           </Pressable>
           <Pressable onPress={() => setExpanded(false)} accessibilityLabel="Close dev panel">
-            <Text style={styles.headerClose}>✕</Text>
+            <Text
+              color={theme.text.muted}
+              fontSize={theme.type.body.size}
+              fontWeight={theme.type.bodySemi.weight as '600'}
+              paddingHorizontal={theme.space.sm}
+            >
+              ✕
+            </Text>
           </Pressable>
         </View>
       </View>
       <ScrollView>
         {rows.map((row) => (
-          <View key={row.label} style={styles.row}>
-            <Text style={styles.rowLabel}>{row.label}</Text>
-            <Text style={styles.rowValue} numberOfLines={1}>
+          <View key={row.label} flexDirection="row" justifyContent="space-between" paddingVertical={2}>
+            <Text
+              color={theme.text.muted}
+              fontSize={theme.type.caption.size}
+              fontWeight={theme.type.bodySemi.weight as '600'}
+              flex={1}
+            >
+              {row.label}
+            </Text>
+            <Text
+              color={theme.text.primary}
+              fontSize={theme.type.caption.size}
+              style={{ fontFamily: 'Menlo' }}
+              flex={2}
+              textAlign="right"
+              numberOfLines={1}
+            >
               {row.value}
             </Text>
           </View>
