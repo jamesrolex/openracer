@@ -415,6 +415,73 @@ Not in Phase 1 scope; captured so they aren't lost.
 Both features get their own phase-plan entries when we get there; these
 notes are just pointers.
 
-## Retro (to be appended as we go)
+## Retro (as we go)
 
-_(Week-by-week notes land here during the phase, not upfront.)_
+### 2026-04-24 — Weeks 1-7 condensed into a single working-day sprint
+
+A single session took the project from empty SQLite to a working end-
+to-end alpha in Expo Go. Unusual pace because no native-module
+migration blocked progress — QR transport substituted for BLE/mDNS,
+and MapLibre-dependent methods (5, 6) were deliberately deferred.
+
+**Shipped in the sprint:**
+
+- Week 1: Mark data model + SQLite migrations, Tamagui 1.144 install
+  with visual-parity migration, marksRepo + tests, useMarksStore.
+- Week 2: MarkLibraryScreen + MarkEditScreen, forgiving parseLatLon
+  (decimal / DMM / DMS), React Navigation stack, seeded Abersoch
+  fixture.
+- Week 3: Course templates catalogue, coursesRepo + course_legs +
+  course_leg_marks, useCoursesStore, CourseEntryScreen, MarkPickerSheet
+  with nearest-first sort, CourseStrip. Rounding P/S chip UI added
+  after on-device feedback (B-012).
+- Week 4 Phase A: ECDSA P-256 via @noble/curves, canonical-JSON
+  signed bundle codec, committee_trust table + repo +
+  useCommitteeTrustStore, ingest pipeline, useCommitteeIdentityStore
+  persisted keypair. **QR transport substituted for BLE/mDNS** so the
+  full committee-push round trip works in Expo Go:
+  CommitteeIdentityScreen + ShareCourseScreen + ScanCoursePushScreen
+  + TrustedCommitteesScreen. Phase B (BLE/mDNS) documented in
+  docs/dev-build-setup.md.
+- Week 5 Methods 3-4: Drop-at-GPS + Bearing+distance from a
+  reference mark. MarkBearingScreen with live coord preview.
+- Week 7: Time-anchored race-timer state machine (makeSnapshot ->
+  state + band + next signal), useRaceStore persisted so
+  kill-during-countdown resumes, RaceTimerScreen with monster
+  countdown + band colours + sync/shift/recall/abandon actions,
+  local notifications at T-5/T-4/T-1/T-0 via expo-notifications,
+  haptics on minute transitions and gun. Start-line geometry
+  (signed distance, time-to-line, line bias) with 12 tests, plus
+  StartLineReadout on HomeScreen during arming.
+- Method 7 (out of Week 6 scope): compass + triangulation via
+  expo-location headings + pure triangulate math. MarkPointAtScreen
+  two-step wizard with 20 m-minimum-movement guard.
+- Settings screen: unit overrides, night-mode toggle, entry points
+  into committee-push admin.
+
+**Bugs logged + fixed during the sprint:**
+- B-009: Tamagui runtime token-symmetry check rejected zIndex keys.
+- B-010: Marks link too small to press (12 pt text → 44 pt pill).
+- B-011: Input height squashed by Tamagui `size="$md"` prop.
+- B-012: Rounding direction invisible in CourseEntry UI.
+
+**Counts at end of day:**
+- 172 unit tests across 17 suites, all green.
+- iOS bundle ~5.6 MB, builds cleanly.
+- 5 of 7 course-entry methods functional. Chart methods (5, 6)
+  remain on the Phase B docket with MapLibre.
+
+**Deliberate scope deferrals:**
+- MapLibre + chart-tap + chart-seamarks: Phase B (EAS dev build).
+- BLE + mDNS: Phase B. QR covers the flow meanwhile.
+- Track logging during race: Phase 2.
+- Race session analytics / post-race debrief: Phase 4.
+
+**What to pick up next on-device:**
+1. Dog-food the 3-minute drill — time from VHF-style call to
+   timer-armed using each of the 5 working methods.
+2. Eyeball MarkPointAtScreen on deck — compass accuracy on
+   phones is the biggest unknown in the spec.
+3. Decide on Phase B trigger: if on-device QR works smoothly, the
+   EAS migration can wait until chart work is needed (Week 5-6).
+

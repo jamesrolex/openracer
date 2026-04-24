@@ -20,6 +20,7 @@ import { MarkLibraryScreen } from '../screens/MarkLibraryScreen';
 import { MarkPointAtScreen } from '../screens/MarkPointAtScreen';
 import { RaceTimerScreen } from '../screens/RaceTimerScreen';
 import { ScanCoursePushScreen } from '../screens/ScanCoursePushScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { ShareCourseScreen } from '../screens/ShareCourseScreen';
 import { TrustedCommitteesScreen } from '../screens/TrustedCommitteesScreen';
 
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   ScanCoursePush: undefined;
   TrustedCommittees: undefined;
   RaceTimer: undefined;
+  Settings: undefined;
 };
 
 export type RootStackScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<
@@ -67,6 +69,7 @@ export function RootNavigator() {
       <Stack.Screen name="ScanCoursePush" component={ScanCoursePushScreen} />
       <Stack.Screen name="TrustedCommittees" component={TrustedCommitteesScreen} />
       <Stack.Screen name="RaceTimer" component={RaceTimerScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }

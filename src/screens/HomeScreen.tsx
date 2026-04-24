@@ -90,7 +90,30 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
           alignItems="center"
           marginBottom={theme.space.md}
         >
-          <ConnectionBadge mode={connectivity} variant={variant} />
+          <View flexDirection="row" alignItems="center">
+            <ConnectionBadge mode={connectivity} variant={variant} />
+            <Pressable
+              onPress={() => navigation.navigate('Settings')}
+              hitSlop={8}
+              accessibilityLabel="Settings"
+            >
+              <View
+                marginLeft={theme.space.sm}
+                width={32}
+                height={32}
+                borderRadius={theme.radius.full}
+                borderColor={theme.border}
+                borderWidth={1}
+                backgroundColor={theme.surface}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text color={theme.text.secondary} fontSize={16}>
+                  ⚙
+                </Text>
+              </View>
+            </Pressable>
+          </View>
           <ModeToggle mode={mode} onChange={setMode} variant={variant} />
         </View>
 
