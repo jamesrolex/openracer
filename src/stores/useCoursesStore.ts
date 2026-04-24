@@ -34,6 +34,7 @@ export interface CoursesActions {
     state?: CourseState;
   }) => Promise<Course>;
   setLegMarks: (legId: string, markIds: string[]) => Promise<Course>;
+  setLegRounding: (legId: string, rounding: Leg['rounding']) => Promise<Course>;
   clearDraft: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -100,6 +101,15 @@ export const useCoursesStore = create<CoursesState & CoursesActions>((set, get) 
     const current = get().activeDraft;
     if (!current) throw new Error('setLegMarks: no active draft');
     const nextLegs = current.legs.map((l) => (l.id === legId ? { ...l, markIds } : l));
+    const updated = await updateCourse(current.id, { legs: nextLegs });
+    set({ activeDraft: updated });
+    return updated;
+  },
+
+  setLegRounding: async (legId, rounding) => {
+    const current = get().activeDraft;
+    if (!current) throw new Error('setLegRounding: no active draft');
+    const nextLegs = current.legs.map((l) => (l.id === legId ? { ...l, rounding } : l));
     const updated = await updateCourse(current.id, { legs: nextLegs });
     set({ activeDraft: updated });
     return updated;

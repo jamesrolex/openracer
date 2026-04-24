@@ -372,6 +372,40 @@ State clearly: "Phase 1 complete. Exit gate met (3-min course entry + timer arme
 
 Then stop. Let the Abersoch feedback arrive. Open a fresh session for Phase 2 once there's real data to plan against.
 
+## Parking lot — ideas raised mid-phase
+
+Not in Phase 1 scope; captured so they aren't lost.
+
+- **Visual course builder on the chart** (post-MapLibre). Tap the chart to
+  place legs in sequence, drag to reorder, long-press a rounding mark to
+  swap port/starboard. Replaces text-and-lists UX with a sea-chart-as-
+  canvas pattern. **Natural home:** end of Phase 2 or a Phase 2.5
+  delivery once chart tile + seamark layers are in.
+- **"Point at mark" via compass + triangulation** (Method 7 in the spec).
+  The sailor stands on the boat, points the phone at the mark, taps; phone
+  records the compass bearing. Move 50m away, point again, tap. App
+  triangulates the two bearings to fix the mark's position. Already listed
+  as Method 7 with a go/no-go gate in Week 6; this memo reaffirms James
+  wants it built rather than dropped. **Natural home:** Week 6-8 per the
+  existing plan; if it slips, revisit once MapLibre is in so we can
+  visualise the two bearing lines on the chart and show the triangulated
+  fix point before committing.
+- **Start-line type selector + rabbit-start support**. Today a start leg
+  is simply "two marks" and the code has no opinion about which is the
+  committee boat vs the pin end. Week 7 delivers distance-to-line +
+  OCS warning, which requires the geometry to be explicit. Planned shape:
+  a `startType` field on the course — `standard-line` (2 marks: CB
+  starboard-end, pin port-end by ISAF convention), `rabbit` (1 moving
+  mark; sailor must be behind the rabbit boat's stern at the gun), and
+  `gate` (2 gate marks, same geometry as a downwind gate). UX: a
+  single pill selector on the course-entry start leg that swaps the
+  slot count and labels. **Natural home:** Week 7 — the timer needs to
+  know. For now we treat the slot-1 mark as CB and slot-2 as pin; that
+  matches club convention and is forward-compatible.
+
+Both features get their own phase-plan entries when we get there; these
+notes are just pointers.
+
 ## Retro (to be appended as we go)
 
 _(Week-by-week notes land here during the phase, not upfront.)_

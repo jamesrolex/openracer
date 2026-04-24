@@ -47,6 +47,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   const startDraft = useCoursesStore((s) => s.startDraft);
   const updateDraft = useCoursesStore((s) => s.updateDraft);
   const setLegMarks = useCoursesStore((s) => s.setLegMarks);
+  const setLegRounding = useCoursesStore((s) => s.setLegRounding);
   const clearDraft = useCoursesStore((s) => s.clearDraft);
 
   const [templateId, setTemplateId] = useState<CourseTemplateId>(draft?.templateId ?? 'windward-leeward');
@@ -126,6 +127,17 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   function clearLeg(legId: string) {
     const nextLegs = legs.map((l) => (l.id === legId ? { ...l, markIds: [] } : l));
     setLegs(nextLegs);
+  }
+
+  async function toggleRounding(legId: string) {
+    const current = legs.find((l) => l.id === legId);
+    if (!current || current.rounding === null) return;
+    const next: Leg['rounding'] = current.rounding === 'port' ? 'starboard' : 'port';
+    const nextLegs = legs.map((l) => (l.id === legId ? { ...l, rounding: next } : l));
+    setLegs(nextLegs);
+    if (draft) {
+      await setLegRounding(legId, next);
+    }
   }
 
   function addRoundingLeg() {
@@ -278,6 +290,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
             theme={theme}
             onPress={() => openPicker(leg.id)}
             onClear={() => clearLeg(leg.id)}
+            onToggleRounding={() => void toggleRounding(leg.id)}
           />
         ))}
 
@@ -401,9 +414,18 @@ interface LegRowProps {
   theme: ReturnType<typeof getTheme>;
   onPress: () => void;
   onClear: () => void;
+  onToggleRounding: () => void;
 }
 
-function LegRow({ leg, index, marks, theme, onPress, onClear }: LegRowProps) {
+function LegRow({
+  leg,
+  index,
+  marks,
+  theme,
+  onPress,
+  onClear,
+  onToggleRounding,
+}: LegRowProps) {
   const resolved = leg.markIds
     .map((id) => marks.find((m) => m.id === id)?.name ?? '(missing)')
     .join(' + ');
@@ -443,15 +465,45 @@ function LegRow({ leg, index, marks, theme, onPress, onClear }: LegRowProps) {
           </Text>
         </View>
         <View flex={1}>
-          <Text
-            color={theme.text.muted}
-            fontSize={theme.type.micro.size}
-            fontWeight={theme.type.micro.weight as '600'}
-            letterSpacing={theme.type.micro.letterSpacing}
-            marginBottom={2}
-          >
-            {leg.label.toUpperCase()}
-          </Text>
+          <View flexDirection="row" alignItems="center" marginBottom={2}>
+            <Text
+              color={theme.text.muted}
+              fontSize={theme.type.micro.size}
+              fontWeight={theme.type.micro.weight as '600'}
+              letterSpacing={theme.type.micro.letterSpacing}
+              marginRight={theme.space.xs}
+            >
+              {leg.label.toUpperCase()}
+            </Text>
+            {leg.rounding ? (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onToggleRounding();
+                }}
+                hitSlop={8}
+                accessibilityLabel={`Toggle rounding — currently ${leg.rounding}`}
+              >
+                <View
+                  paddingVertical={1}
+                  paddingHorizontal={6}
+                  borderRadius={theme.radius.sm}
+                  backgroundColor={
+                    leg.rounding === 'port' ? theme.status.danger : theme.status.success
+                  }
+                >
+                  <Text
+                    color={theme.bg}
+                    fontSize={theme.type.micro.size}
+                    fontWeight={theme.type.micro.weight as '600'}
+                    letterSpacing={theme.type.micro.letterSpacing}
+                  >
+                    {leg.rounding === 'port' ? 'LEAVE TO PORT' : 'LEAVE TO STBD'}
+                  </Text>
+                </View>
+              </Pressable>
+            ) : null}
+          </View>
           <Text
             color={filled ? theme.text.primary : theme.text.muted}
             fontSize={theme.type.body.size}
@@ -461,7 +513,13 @@ function LegRow({ leg, index, marks, theme, onPress, onClear }: LegRowProps) {
           </Text>
         </View>
         {filled ? (
-          <Pressable onPress={onClear} hitSlop={8}>
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            hitSlop={8}
+          >
             <Text
               color={theme.text.muted}
               fontSize={theme.type.caption.size}

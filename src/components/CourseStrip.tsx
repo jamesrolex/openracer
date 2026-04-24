@@ -72,6 +72,7 @@ export function CourseStrip({ course, onPress, variant = 'day' }: CourseStripPro
         <View flexDirection="row" flexWrap="wrap">
           {course.legs.map((leg, idx) => {
             const filled = leg.markIds.length >= leg.requiredMarks;
+            const roundingTag = leg.rounding === 'port' ? ' · P' : leg.rounding === 'starboard' ? ' · S' : '';
             return (
               <View key={leg.id} flexDirection="row" alignItems="center">
                 <View
@@ -88,7 +89,7 @@ export function CourseStrip({ course, onPress, variant = 'day' }: CourseStripPro
                     fontWeight={theme.type.micro.weight as '600'}
                     letterSpacing={theme.type.micro.letterSpacing}
                   >
-                    {LEG_SHORT[leg.type].toUpperCase()}
+                    {`${LEG_SHORT[leg.type].toUpperCase()}${roundingTag}`}
                   </Text>
                 </View>
                 {idx < course.legs.length - 1 ? (

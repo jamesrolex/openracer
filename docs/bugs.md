@@ -34,6 +34,7 @@ issue with the `feature` label.
 | B-009 | Tamagui `createTamagui` crashes on boot: zIndex tokens use numeric keys (`$0..$3`) while other scales use `$xxs..$huge` | 1 | high | fixed | zIndex keys realigned to the shared scale (`xxs..huge`); Tamagui 1.x enforces symmetric token keys at runtime, not at typecheck time |
 | B-010 | "Marks →" link on HomeScreen is hard to press (12 pt text, no background, ~15 pt tap target) | 1 | medium | fixed | Replaced bare text link with a pill-shaped button using accent fill and 44 pt minimum tap target per HIG |
 | B-011 | Text inputs on MarkEdit + MarkLibrary are squashed (Tamagui `size="$md"` collides with my 8-point spacing scale → 16 pt-tall input) | 1 | medium | fixed | Dropped Tamagui `size` prop on `Input` everywhere; inputs now use explicit `height={44}`, `paddingHorizontal`, `fontSize` matching the design-system body scale |
+| B-012 | Rounding direction (port / starboard) not shown on CourseEntry leg rows — data model has it but UI never rendered it | 1 | medium | fixed | LegRow now shows a tappable P / S chip that toggles per-leg rounding; CourseStrip inherits the same marker under each rounding chip |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).
