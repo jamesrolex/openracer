@@ -24,7 +24,7 @@ import { ModeToggle } from '../components/ModeToggle';
 import { useBoatStore } from '../stores/useBoatStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
-import { formatBearing, formatDistance, metresPerSecondToKnots } from '../utils/format';
+import { formatBearing, formatDistance, formatLatLon, metresPerSecondToKnots } from '../utils/format';
 
 const STALE_AFTER_MS = 3000;
 const PLACEHOLDER = '—';
@@ -49,10 +49,10 @@ export function HomeScreen() {
 
   const sogDisplay = sog === null ? PLACEHOLDER : metresPerSecondToKnots(sog).toFixed(1);
   const cogDisplay = cog === null ? PLACEHOLDER : formatBearing(cog).replace('°', '');
-  // Phase 0 plan calls for decimal coords on HomeScreen. User's coord-format
-  // preference governs other screens (Mark library, course entry, etc.).
-  const latDisplay = position === null ? PLACEHOLDER : position.latitude.toFixed(4);
-  const lonDisplay = position === null ? PLACEHOLDER : position.longitude.toFixed(4);
+  // Phase 0 plan calls for decimal coords on HomeScreen; sailors expect
+  // hemisphere letters (N / S / E / W) rather than signed numbers, so the
+  // formatter is used with `decimal` rather than raw toFixed (B-007).
+  const { lat: latDisplay, lon: lonDisplay } = splitLatLonForDisplay(position);
 
   const accuracyDisplay = accuracy === null ? PLACEHOLDER : `GPS ${formatDistance(accuracy, 'm')}`;
   const freshnessDisplay =
@@ -121,8 +121,8 @@ export function HomeScreen() {
             <BigNumber label="COG" value={cogDisplay} unit="°" emphasis={cogEmphasis} stale={stale} variant={variant} />
           </View>
           <View style={styles.row}>
-            <BigNumber label="LAT" value={latDisplay} unit="°" emphasis={latEmphasis} stale={stale} variant={variant} />
-            <BigNumber label="LON" value={lonDisplay} unit="°" emphasis={lonEmphasis} stale={stale} variant={variant} />
+            <BigNumber label="LAT" value={latDisplay} emphasis={latEmphasis} stale={stale} variant={variant} />
+            <BigNumber label="LON" value={lonDisplay} emphasis={lonEmphasis} stale={stale} variant={variant} />
           </View>
         </View>
 
@@ -139,6 +139,15 @@ export function HomeScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+function splitLatLonForDisplay(
+  position: { latitude: number; longitude: number } | null,
+): { lat: string; lon: string } {
+  if (position === null) return { lat: PLACEHOLDER, lon: PLACEHOLDER };
+  const combined = formatLatLon(position.latitude, position.longitude, 'decimal');
+  const [lat, lon] = combined.split(', ');
+  return { lat: lat ?? PLACEHOLDER, lon: lon ?? PLACEHOLDER };
 }
 
 function describeAge(ms: number): string {

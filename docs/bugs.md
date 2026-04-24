@@ -29,6 +29,7 @@ issue with the `feature` label.
 | B-004 | LAT/LON DMM format wraps awkwardly on iPhone width; also scope drift from Phase 0 plan | 0 | medium | fixed | HomeScreen now uses decimal format (per Phase 0 plan); user-pref `coordFormat` reserved for future screens |
 | B-005 | ConnectionBadge says "Starlink" for any constant connection (confusing on home WiFi) | 0 | low | fixed | Label changed from "Starlink" to "Online" — neutral, accurate for any constant source |
 | B-006 | Screenshot → AirDrop → paste loop for diagnostics is slow | 0 | medium | fixed | DevPanel gained a "Copy" button that puts the rows on the clipboard via `expo-clipboard` |
+| B-007 | LAT/LON show signed decimals without hemisphere letters | 0 | medium | fixed | HomeScreen now uses `formatLatLon(..., 'decimal')` — e.g. `52.8226° N`, `4.5097° W` |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).
