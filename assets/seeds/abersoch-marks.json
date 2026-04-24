@@ -1,0 +1,60 @@
+{
+  "comment": "Placeholder club marks for Abersoch SC. Approximate positions based on typical Cardigan Bay club racing area. Intent is to give the Mark Library a non-empty first-launch experience. Edit on-device to correct once the real season coords are to hand.",
+  "marks": [
+    {
+      "name": "Harbour Jetty (CB)",
+      "latitude": 52.8228,
+      "longitude": -4.5097,
+      "tier": "club-seasonal",
+      "source": "club-library",
+      "icon": "committee-boat",
+      "shape": "unknown",
+      "owner": "Abersoch SC",
+      "notes": "Typical committee-boat station for Wednesday evening starts."
+    },
+    {
+      "name": "Yellow",
+      "latitude": 52.8350,
+      "longitude": -4.5150,
+      "tier": "club-seasonal",
+      "source": "club-library",
+      "icon": "racing-yellow",
+      "shape": "spherical",
+      "owner": "Abersoch SC",
+      "notes": "Windward mark for W-L courses."
+    },
+    {
+      "name": "Red",
+      "latitude": 52.8150,
+      "longitude": -4.5050,
+      "tier": "club-seasonal",
+      "source": "club-library",
+      "icon": "racing-red",
+      "shape": "spherical",
+      "owner": "Abersoch SC",
+      "notes": "Leeward mark for W-L courses."
+    },
+    {
+      "name": "Orange",
+      "latitude": 52.8250,
+      "longitude": -4.4850,
+      "tier": "club-seasonal",
+      "source": "club-library",
+      "icon": "racing-orange",
+      "shape": "spherical",
+      "owner": "Abersoch SC",
+      "notes": "Reach mark for triangle courses."
+    },
+    {
+      "name": "Pin End",
+      "latitude": 52.8218,
+      "longitude": -4.5130,
+      "tier": "club-seasonal",
+      "source": "club-library",
+      "icon": "pin-end",
+      "shape": "pillar",
+      "owner": "Abersoch SC",
+      "notes": "Pin end of the start line."
+    }
+  ]
+}
