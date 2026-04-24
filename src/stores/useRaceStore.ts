@@ -36,6 +36,13 @@ export interface RaceStoreState {
   sequence: StartSequence;
   /** General-recall count for analytics / UX. */
   recallCount: number;
+  /** Running total of metres logged to this session's track — cheap to read
+   *  every frame for a live progress readout without hitting SQLite. */
+  sailedMetres: number;
+  /** Last position logged by the track logger; folded into sailedMetres
+   *  on the next write. Null when idle or fresh. */
+  lastTrackLatitude: number | null;
+  lastTrackLongitude: number | null;
 }
 
 export interface RaceActions {
@@ -55,6 +62,8 @@ export interface RaceActions {
   reset: () => void;
   /** Set the runtime state tag on the active session (starting / running). */
   setActiveSessionState: (state: RaceState) => Promise<void>;
+  /** Fold a freshly-logged track point into the running sailed-distance. */
+  addTrackDistance: (latitude: number, longitude: number) => void;
 }
 
 const initial: RaceStoreState = {
@@ -63,7 +72,31 @@ const initial: RaceStoreState = {
   activeSessionId: null,
   sequence: STANDARD_START_SEQUENCE,
   recallCount: 0,
+  sailedMetres: 0,
+  lastTrackLatitude: null,
+  lastTrackLongitude: null,
 };
+
+// Haversine great-circle distance, inlined here to avoid pulling a
+// utils barrel import into a persisted store module (circular-import risk).
+function haversineMetres(
+  fromLat: number,
+  fromLon: number,
+  toLat: number,
+  toLon: number,
+): number {
+  const R = 6371008.8;
+  const toRad = Math.PI / 180;
+  const dLat = (toLat - fromLat) * toRad;
+  const dLon = (toLon - fromLon) * toRad;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(fromLat * toRad) *
+      Math.cos(toLat * toRad) *
+      Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export const useRaceStore = create<RaceStoreState & RaceActions>()(
   persist(
@@ -79,6 +112,9 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
           activeSessionId: session.id,
           recallCount: 0,
           sequence: STANDARD_START_SEQUENCE,
+          sailedMetres: 0,
+          lastTrackLatitude: null,
+          lastTrackLongitude: null,
         });
         return session.id;
       },
@@ -124,6 +160,30 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
         if (!id) return;
         await updateRaceSessionState(id, state);
       },
+
+      addTrackDistance: (latitude, longitude) => {
+        const s = get();
+        if (s.lastTrackLatitude === null || s.lastTrackLongitude === null) {
+          set({ lastTrackLatitude: latitude, lastTrackLongitude: longitude });
+          return;
+        }
+        const d = haversineMetres(
+          s.lastTrackLatitude,
+          s.lastTrackLongitude,
+          latitude,
+          longitude,
+        );
+        // Same guardrails as computeTrackDistance — drop jitter and jumps.
+        if (d < 2 || d > 500) {
+          set({ lastTrackLatitude: latitude, lastTrackLongitude: longitude });
+          return;
+        }
+        set({
+          sailedMetres: s.sailedMetres + d,
+          lastTrackLatitude: latitude,
+          lastTrackLongitude: longitude,
+        });
+      },
     }),
     {
       name: 'openracer.race-timer',
@@ -134,6 +194,9 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
         activeSessionId: state.activeSessionId,
         sequence: state.sequence,
         recallCount: state.recallCount,
+        sailedMetres: state.sailedMetres,
+        lastTrackLatitude: state.lastTrackLatitude,
+        lastTrackLongitude: state.lastTrackLongitude,
       }),
     },
   ),

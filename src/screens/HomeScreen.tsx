@@ -16,7 +16,7 @@
  *   GPS ±3 m · updated 1 s ago                    [Marks →]
  */
 
-import { Pressable } from 'react-native';
+import { Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
@@ -32,6 +32,7 @@ import { useCoursesStore } from '../stores/useCoursesStore';
 import { useMarksStore } from '../stores/useMarksStore';
 import { useRaceStore } from '../stores/useRaceStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import { useTripStore } from '../stores/useTripStore';
 import { getTheme } from '../theme/theme';
 import { formatBearing, formatDistance, formatLatLon, metresPerSecondToKnots } from '../utils/format';
 
@@ -56,6 +57,11 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
   const connectivity = useBoatStore((state) => state.connectivity);
   const permissionStatus = useBoatStore((state) => state.permissionStatus);
   const setMode = useBoatStore((state) => state.setMode);
+
+  const tripMetres = useTripStore((s) => s.distanceMetres);
+  const tripStartedAt = useTripStore((s) => s.startedAt);
+  const tripMaxSog = useTripStore((s) => s.maxSogMps);
+  const tripReset = useTripStore((s) => s.reset);
 
   const now = Date.now();
   const lastUpdateMs = lastUpdate ? new Date(lastUpdate).getTime() : null;
@@ -192,6 +198,25 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
           {accuracyDisplay} · {freshnessDisplay}
         </Text>
 
+        {mode === 'cruise' ? (
+          <TripOdometer
+            theme={theme}
+            metres={tripMetres}
+            startedAt={tripStartedAt}
+            maxSogMps={tripMaxSog}
+            onReset={() =>
+              Alert.alert(
+                'Reset trip?',
+                'Zero the distance counter and start a new trip from here.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Reset', style: 'destructive', onPress: () => tripReset() },
+                ],
+              )
+            }
+          />
+        ) : null}
+
         <View flexDirection="row" marginTop={theme.space.sm}>
           {sequenceStartTime ? (
             <HomeButton
@@ -241,6 +266,83 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
         ) : null}
       </View>
     </SafeAreaView>
+  );
+}
+
+function TripOdometer({
+  theme,
+  metres,
+  startedAt,
+  maxSogMps,
+  onReset,
+}: {
+  theme: ReturnType<typeof getTheme>;
+  metres: number;
+  startedAt: string | null;
+  maxSogMps: number;
+  onReset: () => void;
+}) {
+  const nm = metres / 1852;
+  const nmDisplay = nm < 10 ? nm.toFixed(2) : nm.toFixed(1);
+  const maxSogKn = maxSogMps * 1.9438444924;
+  const since = startedAt ? new Date(startedAt) : null;
+  const sinceDisplay = since
+    ? `since ${since.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ${since.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+    : 'not started';
+
+  return (
+    <View
+      flexDirection="row"
+      alignItems="center"
+      justifyContent="space-between"
+      padding={theme.space.sm}
+      marginTop={theme.space.sm}
+      borderRadius={theme.radius.md}
+      borderColor={theme.border}
+      borderWidth={1}
+      backgroundColor={theme.surface}
+    >
+      <View>
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.micro.size}
+          fontWeight={theme.type.micro.weight as '600'}
+          letterSpacing={theme.type.micro.letterSpacing}
+        >
+          TRIP
+        </Text>
+        <Text
+          color={theme.text.primary}
+          fontSize={theme.type.h2.size}
+          fontWeight={theme.type.h2.weight as '600'}
+          style={{ fontFamily: 'Menlo' }}
+        >
+          {nmDisplay} nm
+        </Text>
+        <Text color={theme.text.muted} fontSize={theme.type.caption.size}>
+          {sinceDisplay}
+          {maxSogKn > 0 ? ` · max ${maxSogKn.toFixed(1)} kn` : ''}
+        </Text>
+      </View>
+
+      <Pressable onPress={onReset} accessibilityLabel="Reset trip">
+        <View
+          paddingVertical={theme.space.xs}
+          paddingHorizontal={theme.space.md}
+          borderRadius={theme.radius.full}
+          borderColor={theme.border}
+          borderWidth={1}
+        >
+          <Text
+            color={theme.text.secondary}
+            fontSize={theme.type.caption.size}
+            fontWeight={theme.type.bodySemi.weight as '600'}
+          >
+            Reset
+          </Text>
+        </View>
+      </Pressable>
+    </View>
   );
 }
 

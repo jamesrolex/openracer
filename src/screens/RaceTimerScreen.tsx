@@ -13,6 +13,8 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
+import { CourseProgressReadout } from '../components/CourseProgressReadout';
+import { computeCourseDistance } from '../domain/courseDistance';
 import {
   cancelAllRaceNotifications,
   requestNotificationPermissions,
@@ -20,6 +22,8 @@ import {
 } from '../domain/raceNotifications';
 import { formatCountdown, makeSnapshot } from '../domain/raceTimer';
 import type { RootStackScreenProps } from '../navigation';
+import { useCoursesStore } from '../stores/useCoursesStore';
+import { useMarksStore } from '../stores/useMarksStore';
 import { useRaceStore } from '../stores/useRaceStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
@@ -28,6 +32,7 @@ import type { RaceState } from '../types/race';
 export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'>) {
   const nightMode = useSettingsStore((s) => s.nightMode);
   const theme = getTheme(nightMode ? 'night' : 'day');
+  const variant = nightMode ? 'night' : 'day';
 
   const sequenceStartTime = useRaceStore((s) => s.sequenceStartTime);
   const sequence = useRaceStore((s) => s.sequence);
@@ -38,6 +43,12 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const abandon = useRaceStore((s) => s.abandon);
   const finish = useRaceStore((s) => s.finish);
   const setActiveSessionState = useRaceStore((s) => s.setActiveSessionState);
+  const sailedMetres = useRaceStore((s) => s.sailedMetres);
+
+  const draft = useCoursesStore((s) => s.activeDraft);
+  const marks = useMarksStore((s) => s.marks);
+  const totalMetres =
+    draft !== null ? computeCourseDistance(draft.legs, marks).totalMetres : 0;
 
   const [snapshot, setSnapshot] = useState(() =>
     makeSnapshot(sequenceStartTime, new Date(), sequence),
@@ -220,6 +231,14 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
 
         {sequenceStartTime ? (
           <>
+            {snapshot.state === 'starting' || snapshot.state === 'running' ? (
+              <CourseProgressReadout
+                sailedMetres={sailedMetres}
+                totalMetres={totalMetres}
+                variant={variant}
+              />
+            ) : null}
+
             <View flexDirection="row" marginBottom={theme.space.sm}>
               <TimerButton label="Sync" onPress={syncToMinute} theme={theme} variant="primary" />
               <TimerButton

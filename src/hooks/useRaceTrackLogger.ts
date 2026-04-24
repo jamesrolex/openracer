@@ -17,8 +17,8 @@
 import { useEffect, useRef } from 'react';
 
 import { makeSnapshot } from '../domain/raceTimer';
-import { useBoatStore } from '../stores/useBoatStore';
 import { insertTrackPoint } from '../stores/raceSessionsRepo';
+import { useBoatStore } from '../stores/useBoatStore';
 import { useRaceStore } from '../stores/useRaceStore';
 
 const WRITE_INTERVAL_MS = 1000;
@@ -59,6 +59,13 @@ export function useRaceTrackLogger(): void {
         heading: boat.heading,
         accuracy: boat.accuracy,
       });
+
+      // Keep a live running-total of metres sailed in the race store so
+      // the timer screen can show a progress bar without re-reading every
+      // track point from SQLite on every 250 ms tick.
+      useRaceStore
+        .getState()
+        .addTrackDistance(boat.position.latitude, boat.position.longitude);
     };
 
     // Fire immediately, then every tick. 250ms cadence matches the
