@@ -9,7 +9,7 @@
  * member sees about THIS boat."
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,19 +42,32 @@ export function ShareBoatProfileScreen({
   const identity = useCommitteeIdentityStore((s) => s.identity);
   const marks = useMarksStore((s) => s.marks);
   const polarRaw = useSettingsStore((s) => s.polarRaw);
+  const persistedBoatName = useSettingsStore((s) => s.boatName);
+  const setBoatName = useSettingsStore((s) => s.setBoatName);
 
-  const [boatName, setBoatName] = useState(
-    identity?.committeeName ?? 'My boat',
-  );
+  // Boat name is a persistent setting, not a per-share input. The local
+  // editable field reads from settings; on blur we write back so the
+  // user can rename in-place.
+  const [draft, setDraft] = useState(persistedBoatName ?? '');
+  useEffect(() => {
+    setDraft(persistedBoatName ?? '');
+  }, [persistedBoatName]);
+
+  function commitBoatName(text: string) {
+    const trimmed = text.trim();
+    setBoatName(trimmed.length === 0 ? null : trimmed);
+  }
+
+  const boatName = persistedBoatName ?? '';
 
   const qr = useMemo(() => {
-    if (!identity || marks.length === 0) return null;
+    if (!identity || marks.length === 0 || !boatName) return null;
     try {
       const bundle = buildBoatProfile({
         senderId: identity.committeeId,
         senderName: identity.committeeName,
         privateKey: identity.privateKey,
-        boatName: boatName.trim() || 'My boat',
+        boatName,
         marks,
         polarRaw: polarRaw ?? undefined,
       });
@@ -121,9 +134,10 @@ export function ShareBoatProfileScreen({
           BOAT NAME
         </Text>
         <Input
-          value={boatName}
-          onChangeText={setBoatName}
-          placeholder="My boat"
+          value={draft}
+          onChangeText={setDraft}
+          onBlur={() => commitBoatName(draft)}
+          placeholder="Pantera"
           height={44}
           paddingHorizontal={theme.space.md}
           fontSize={theme.type.body.size}
@@ -131,8 +145,16 @@ export function ShareBoatProfileScreen({
           backgroundColor={theme.surface}
           color={theme.text.primary}
           placeholderTextColor={theme.text.muted}
-          marginBottom={theme.space.md}
+          marginBottom={theme.space.xs}
         />
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.caption.size}
+          lineHeight={theme.type.caption.lineHeight}
+          marginBottom={theme.space.md}
+        >
+          Saved across the app — set it once, edit any time.
+        </Text>
 
         {!identity ? (
           <EmptyState
@@ -141,6 +163,14 @@ export function ShareBoatProfileScreen({
             body="Your crew need to verify the bundle against your public key — proves it really came from you. Set up your identity once; the same key signs every share."
             cta="Set up identity"
             onCta={() => navigation.replace('CommitteeIdentity')}
+          />
+        ) : !boatName ? (
+          <EmptyState
+            theme={theme}
+            title="Name your boat first"
+            body="Set the boat name above (e.g. Pantera). It’s saved across the app — you only do this once."
+            cta="Open Settings"
+            onCta={() => navigation.replace('Settings')}
           />
         ) : marks.length === 0 ? (
           <EmptyState

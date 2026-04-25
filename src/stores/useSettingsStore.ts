@@ -45,6 +45,9 @@ export interface SettingsState {
   /** Raw polar table text (ORC-style grid). Null = no polar set; target-
    *  boatspeed readout hidden. */
   polarRaw: string | null;
+  /** Persistent boat name — set once, used everywhere a captain shares
+   *  their boat. Null until the sailor enters it. */
+  boatName: string | null;
 }
 
 export interface SettingsActions {
@@ -58,6 +61,7 @@ export interface SettingsActions {
   setManualTrueWindDegrees: (deg: number | null) => void;
   setManualTrueWindKn: (kn: number | null) => void;
   setPolarRaw: (raw: string | null) => void;
+  setBoatName: (name: string | null) => void;
 }
 
 const defaults: SettingsState = {
@@ -72,6 +76,7 @@ const defaults: SettingsState = {
   manualTrueWindDegrees: null,
   manualTrueWindKn: null,
   polarRaw: null,
+  boatName: null,
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -94,6 +99,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         set({ manualTrueWindDegrees }),
       setManualTrueWindKn: (manualTrueWindKn) => set({ manualTrueWindKn }),
       setPolarRaw: (polarRaw) => set({ polarRaw }),
+      setBoatName: (boatName) => set({ boatName }),
     }),
     {
       name: 'openracer.settings',
@@ -110,6 +116,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         manualTrueWindDegrees: state.manualTrueWindDegrees,
         manualTrueWindKn: state.manualTrueWindKn,
         polarRaw: state.polarRaw,
+        boatName: state.boatName,
       }),
     },
   ),

@@ -235,6 +235,24 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
           )}
         </View>
 
+        {!sequenceStartTime ? (
+          <Pressable
+            onPress={() => navigation.navigate('ScanCoursePush')}
+            accessibilityLabel="Scan QR"
+            hitSlop={8}
+          >
+            <Text
+              color={theme.text.muted}
+              fontSize={theme.type.caption.size}
+              fontWeight={theme.type.bodySemi.weight as '600'}
+              textAlign="center"
+              marginTop={theme.space.sm}
+            >
+              ⌧ Scan QR — join a boat / accept a course
+            </Text>
+          </Pressable>
+        ) : null}
+
         {permissionStatus === 'denied' ? (
           <Text
             color={theme.text.secondary}

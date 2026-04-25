@@ -12,6 +12,7 @@
  */
 
 import Constants from 'expo-constants';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input, Text, View } from 'tamagui';
@@ -58,6 +59,8 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
   const setManualTrueWindKn = useSettingsStore((s) => s.setManualTrueWindKn);
   const polarRaw = useSettingsStore((s) => s.polarRaw);
   const setPolarRaw = useSettingsStore((s) => s.setPolarRaw);
+  const boatName = useSettingsStore((s) => s.boatName);
+  const setBoatName = useSettingsStore((s) => s.setBoatName);
 
   const theme = getTheme(themeVariant);
   const version = (Constants.expoConfig?.version as string | undefined) ?? 'dev';
@@ -96,7 +99,19 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
           <View width={44} />
         </View>
 
-        <Section theme={theme} title="Display">
+        <Section theme={theme} title="Me">
+          <LinkRow
+            theme={theme}
+            label="My signing identity"
+            description="One keypair signs every share — boat profile, race, course."
+            onPress={() => navigation.navigate('CommitteeIdentity')}
+          />
+          <LinkRow
+            theme={theme}
+            label="My sailing log"
+            description="Lifetime miles, boats I’ve joined, recent races."
+            onPress={() => navigation.navigate('SailorLog')}
+          />
           <RadioRow
             theme={theme}
             label="Theme"
@@ -108,21 +123,6 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
             active={themeVariant}
             onChange={(v) => setTheme(v)}
           />
-          <Text
-            color={theme.text.muted}
-            fontSize={theme.type.caption.size}
-            lineHeight={theme.type.caption.lineHeight}
-            marginTop={theme.space.xs}
-          >
-            {themeVariant === 'day'
-              ? 'Standard daylight UI.'
-              : themeVariant === 'night'
-                ? 'Dark background, dim red accent for cockpit night-vision.'
-                : 'High-contrast black and white for sunlight readability — also the look that ports to e-ink boat displays in the future.'}
-          </Text>
-        </Section>
-
-        <Section theme={theme} title="Units">
           <RadioRow
             theme={theme}
             label="Speed"
@@ -147,14 +147,37 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
             active={coordFormat}
             onChange={(v) => setCoordFormat(v)}
           />
+          <WindDirectionRow
+            theme={theme}
+            value={manualTrueWindDegrees}
+            onChange={setManualTrueWindDegrees}
+          />
+          <WindSpeedRow
+            theme={theme}
+            value={manualTrueWindKn}
+            onChange={setManualTrueWindKn}
+          />
         </Section>
 
-        <Section theme={theme} title="Racing">
+        <Section
+          theme={theme}
+          title={boatName ? `My boat — ${boatName}` : 'My boat'}
+        >
+          <BoatNameRow
+            theme={theme}
+            value={boatName}
+            onChange={setBoatName}
+          />
           <LinkRow
             theme={theme}
-            label="My sailing log"
-            description="Lifetime miles, boats joined, recent races."
-            onPress={() => navigation.navigate('SailorLog')}
+            label="Mark library"
+            description="Your saved buoys + start marks. Editable any time."
+            onPress={() => navigation.navigate('MarkLibrary')}
+          />
+          <PolarRow
+            theme={theme}
+            value={polarRaw}
+            onChange={setPolarRaw}
           />
           <LinkRow
             theme={theme}
@@ -168,47 +191,26 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
             description="Past race sessions with duration + distance + points."
             onPress={() => navigation.navigate('RaceSessions')}
           />
-          <WindDirectionRow
+          <LinkRow
             theme={theme}
-            value={manualTrueWindDegrees}
-            onChange={setManualTrueWindDegrees}
-          />
-          <WindSpeedRow
-            theme={theme}
-            value={manualTrueWindKn}
-            onChange={setManualTrueWindKn}
-          />
-          <PolarRow
-            theme={theme}
-            value={polarRaw}
-            onChange={setPolarRaw}
+            label="Invite crew (share boat)"
+            description="QR your crew scan once — gives them your marks + polar."
+            onPress={() => navigation.navigate('ShareBoatProfile')}
           />
         </Section>
 
-        <Section theme={theme} title="Crew + committee">
-          <LinkRow
-            theme={theme}
-            label="My signing identity"
-            description="Keypair + QR for sailors and crew to trust you. One key signs every share."
-            onPress={() => navigation.navigate('CommitteeIdentity')}
-          />
-          <LinkRow
-            theme={theme}
-            label="Invite crew (Join boat)"
-            description="QR your crew scan once at season start — gives them your marks + polar."
-            onPress={() => navigation.navigate('ShareBoatProfile')}
-          />
-          <LinkRow
-            theme={theme}
-            label="Trusted committees + crew"
-            description="Whose bundles you'll accept (committees + crew leaders)."
-            onPress={() => navigation.navigate('TrustedCommittees')}
-          />
+        <Section theme={theme} title="Yacht clubs & trusted people">
           <LinkRow
             theme={theme}
             label="Scan QR"
-            description="Trust key, accept a course, or join a race / boat profile from crew."
+            description="Join a boat, accept a course from a club, or trust a captain."
             onPress={() => navigation.navigate('ScanCoursePush')}
+          />
+          <LinkRow
+            theme={theme}
+            label="Trusted clubs + people"
+            description="Yacht clubs whose race committees push you courses, and captains who can invite you to their boat."
+            onPress={() => navigation.navigate('TrustedCommittees')}
           />
         </Section>
 
@@ -593,6 +595,62 @@ function PolarRow({
         placeholderTextColor={theme.text.muted}
         textAlignVertical="top"
         autoCapitalize="none"
+      />
+    </View>
+  );
+}
+
+function BoatNameRow({
+  theme,
+  value,
+  onChange,
+}: {
+  theme: ReturnType<typeof getTheme>;
+  value: string | null;
+  onChange: (name: string | null) => void;
+}) {
+  const [draft, setDraft] = useState(value ?? '');
+  // Keep local draft in sync if persisted value changes elsewhere.
+  useEffect(() => {
+    setDraft(value ?? '');
+  }, [value]);
+
+  function commit() {
+    const trimmed = draft.trim();
+    onChange(trimmed.length === 0 ? null : trimmed);
+  }
+
+  return (
+    <View paddingVertical={theme.space.xs}>
+      <Text
+        color={theme.text.primary}
+        fontSize={theme.type.body.size}
+        fontWeight={theme.type.bodySemi.weight as '600'}
+      >
+        Boat name
+      </Text>
+      <Text
+        color={theme.text.muted}
+        fontSize={theme.type.caption.size}
+        lineHeight={theme.type.caption.lineHeight}
+        marginTop={2}
+        marginBottom={theme.space.xs}
+      >
+        Used everywhere you share — Invite crew, Share with crew, header
+        of this section. Set it once, edit any time.
+      </Text>
+      <Input
+        value={draft}
+        onChangeText={setDraft}
+        onBlur={commit}
+        placeholder="e.g. Pantera"
+        height={44}
+        paddingHorizontal={theme.space.md}
+        fontSize={theme.type.body.size}
+        borderColor={theme.border}
+        backgroundColor={theme.surface}
+        color={theme.text.primary}
+        placeholderTextColor={theme.text.muted}
       />
     </View>
   );

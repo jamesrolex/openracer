@@ -205,15 +205,34 @@ export function SailorLogScreen({
                   borderColor={theme.border}
                   marginBottom={theme.space.md}
                 >
-                  <Text
-                    color={theme.text.muted}
-                    fontSize={theme.type.micro.size}
-                    fontWeight={theme.type.micro.weight as '600'}
-                    letterSpacing={theme.type.micro.letterSpacing}
+                  <View
+                    flexDirection="row"
+                    justifyContent="space-between"
+                    alignItems="center"
                     marginBottom={theme.space.xs}
                   >
-                    BOATS JOINED
-                  </Text>
+                    <Text
+                      color={theme.text.muted}
+                      fontSize={theme.type.micro.size}
+                      fontWeight={theme.type.micro.weight as '600'}
+                      letterSpacing={theme.type.micro.letterSpacing}
+                    >
+                      BOATS JOINED
+                    </Text>
+                    <Pressable
+                      onPress={() => navigation.navigate('ScanCoursePush')}
+                      hitSlop={8}
+                      accessibilityLabel="Join a boat"
+                    >
+                      <Text
+                        color={theme.accent}
+                        fontSize={theme.type.bodySemi.size}
+                        fontWeight={theme.type.bodySemi.weight as '700'}
+                      >
+                        + Join a boat
+                      </Text>
+                    </Pressable>
+                  </View>
                   {boats.length === 0 ? (
                     <Text
                       color={theme.text.muted}
