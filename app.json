@@ -21,6 +21,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "OpenRacer uses your location to show your boat's position, speed, and heading while racing or cruising.",
         "NSCameraUsageDescription": "OpenRacer uses the camera to scan committee-boat QR codes for course push and trust exchange.",
         "UIBackgroundModes": [
+          "location",
           "location"
         ]
       }
@@ -36,7 +37,18 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "CAMERA"
+        "CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -56,6 +68,17 @@
         }
       ],
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b84e856d-3852-48ed-aba1-b3d4505c2885"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b84e856d-3852-48ed-aba1-b3d4505c2885"
+    }
   }
 }
