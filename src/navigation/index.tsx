@@ -22,6 +22,7 @@ import { MarkPointAtScreen } from '../screens/MarkPointAtScreen';
 import { RaceSessionScreen } from '../screens/RaceSessionScreen';
 import { RaceSessionsScreen } from '../screens/RaceSessionsScreen';
 import { RaceTimerScreen } from '../screens/RaceTimerScreen';
+import { SailorLogScreen } from '../screens/SailorLogScreen';
 import { ScanCoursePushScreen } from '../screens/ScanCoursePushScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ShareBoatProfileScreen } from '../screens/ShareBoatProfileScreen';
@@ -44,6 +45,7 @@ export type RootStackParamList = {
   ShareCourse: undefined;
   ShareRace: undefined;
   ShareBoatProfile: undefined;
+  SailorLog: undefined;
   ScanCoursePush: undefined;
   TrustedCommittees: undefined;
   RaceTimer: undefined;
@@ -79,6 +81,7 @@ export function RootNavigator() {
       <Stack.Screen name="ShareCourse" component={ShareCourseScreen} />
       <Stack.Screen name="ShareRace" component={ShareRaceScreen} />
       <Stack.Screen name="ShareBoatProfile" component={ShareBoatProfileScreen} />
+      <Stack.Screen name="SailorLog" component={SailorLogScreen} />
       <Stack.Screen name="ScanCoursePush" component={ScanCoursePushScreen} />
       <Stack.Screen name="TrustedCommittees" component={TrustedCommitteesScreen} />
       <Stack.Screen name="RaceTimer" component={RaceTimerScreen} />

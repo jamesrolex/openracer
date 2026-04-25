@@ -152,6 +152,12 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
         <Section theme={theme} title="Racing">
           <LinkRow
             theme={theme}
+            label="My sailing log"
+            description="Lifetime miles, boats joined, recent races."
+            onPress={() => navigation.navigate('SailorLog')}
+          />
+          <LinkRow
+            theme={theme}
             label="Saved courses"
             description="Re-arm last week's course in seconds."
             onPress={() => navigation.navigate('CourseLibrary')}

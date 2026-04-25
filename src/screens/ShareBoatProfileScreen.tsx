@@ -105,8 +105,8 @@ export function ShareBoatProfileScreen({
           marginBottom={theme.space.md}
         >
           Show this QR to your crew once at the start of a season. They tap
-          Settings → Scan QR → aim at this code → "Join boat?" — and their
-          phone gets your saved marks + polar. Per-device preferences
+          Settings → Scan QR → aim at this code → &ldquo;Join boat?&rdquo; — and
+          their phone gets your saved marks + polar. Per-device preferences
           (theme, wind for today, trip odometer, race history) stay personal
           to each phone.
         </Text>
