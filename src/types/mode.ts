@@ -3,13 +3,10 @@
  * race timer arms.
  *
  * - **race** — course entry, start sequence, timer, race-share QR
- * - **cruise** — odometer + dashboards (wind / VMG / big numbers); the
- *   relaxed everyday view for a sail with no destination
- * - **nav** — waypoint navigation + cruise-track logging. Distinct from
- *   `cruise` because the mental model is different: nav is "I'm going TO
- *   somewhere, log my track, let me drop waypoints along the way".
- *   Racing **marks** are buoys you round; nav **waypoints** are points
- *   you sail towards. Same data shape (lat/lon + name) but different
- *   intent and lifecycle.
+ * - **cruise** — everything else: trip odometer, dashboards (wind / VMG /
+ *   wind trend / big numbers), waypoints, cruise-track recording. The
+ *   "I'm not racing" mode. Phase 1.16 originally split this into
+ *   cruise + nav but the distinction was muddy — nav features (waypoints,
+ *   start-track) are reachable as a sub-screen inside cruise mode.
  */
-export type AppMode = 'race' | 'cruise' | 'nav';
+export type AppMode = 'race' | 'cruise';

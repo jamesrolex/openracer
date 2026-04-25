@@ -225,13 +225,6 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
               variant="primary"
               theme={theme}
             />
-          ) : mode === 'nav' ? (
-            <HomeButton
-              label="Open Nav"
-              onPress={() => navigation.navigate('NavMode')}
-              variant="primary"
-              theme={theme}
-            />
           ) : (
             <HomeButton
               label="Marks"
@@ -244,23 +237,36 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
 
         {!sequenceStartTime ? (
           <>
-            {mode !== 'nav' ? (
-              <Pressable
-                onPress={() => navigation.navigate('CruiseDisplay')}
-                accessibilityLabel="Cruise display"
-                hitSlop={8}
+            <Pressable
+              onPress={() => navigation.navigate('CruiseDisplay')}
+              accessibilityLabel="Cruise display"
+              hitSlop={8}
+            >
+              <Text
+                color={theme.accent}
+                fontSize={theme.type.caption.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+                textAlign="center"
+                marginTop={theme.space.sm}
               >
-                <Text
-                  color={theme.accent}
-                  fontSize={theme.type.caption.size}
-                  fontWeight={theme.type.bodySemi.weight as '600'}
-                  textAlign="center"
-                  marginTop={theme.space.sm}
-                >
-                  ◐ Cruise display — wind / VMG / big numbers
-                </Text>
-              </Pressable>
-            ) : null}
+                ◐ Cruise display — wind / VMG / big numbers
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate('NavMode')}
+              accessibilityLabel="Tracks and waypoints"
+              hitSlop={8}
+            >
+              <Text
+                color={theme.accent}
+                fontSize={theme.type.caption.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+                textAlign="center"
+                marginTop={theme.space.xs}
+              >
+                🧭 Tracks &amp; waypoints — start track, drop waypoints
+              </Text>
+            </Pressable>
             <Pressable
               onPress={() => navigation.navigate('ScanCoursePush')}
               accessibilityLabel="Scan QR"

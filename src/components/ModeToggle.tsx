@@ -1,12 +1,13 @@
 /**
- * Race / Cruise / Nav toggle. Top-right of the main screen.
+ * Race / Cruise toggle. Top-right of the main screen.
  *
- * Every mode is first-class — never style one as "default" and the others
+ * Both modes are first-class — never style one as "default" and the other
  * as "other". See skills/design-system/SKILL.md "ModeToggle".
  *
- * - Race: course entry, race timer, start-line readouts (Phase 1)
- * - Cruise: odometer + dashboards (Phase 1.7-1.8)
- * - Nav: waypoint navigation + cruise-track logging (Phase 1.16)
+ * Cruise covers everything that isn't racing: trip odometer + dashboards
+ * (wind / VMG / big numbers) + waypoints + cruise-track recording. Nav
+ * features (waypoints + Start track) live as a sub-screen reachable from
+ * Home in cruise mode.
  */
 
 import { Pressable } from 'react-native';
@@ -37,10 +38,9 @@ export function ModeToggle({ mode, onChange, variant = 'day' }: ModeToggleProps)
       accessibilityRole="tablist"
       accessibilityLabel="App mode"
     >
-      {(['race', 'cruise', 'nav'] as const).map((candidate) => {
+      {(['race', 'cruise'] as const).map((candidate) => {
         const active = candidate === mode;
-        const label =
-          candidate === 'race' ? 'Race' : candidate === 'cruise' ? 'Cruise' : 'Nav';
+        const label = candidate === 'race' ? 'Race' : 'Cruise';
         return (
           <Pressable
             key={candidate}

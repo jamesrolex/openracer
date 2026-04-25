@@ -140,7 +140,7 @@ export function NavModeScreen({ navigation }: RootStackScreenProps<'NavMode'>) {
             fontSize={theme.type.h2.size}
             fontWeight={theme.type.h2.weight as '600'}
           >
-            Nav
+            Tracks &amp; waypoints
           </Text>
           <View width={44} />
         </View>
