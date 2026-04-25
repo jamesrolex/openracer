@@ -4,11 +4,11 @@
  * cascades its track points.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, View } from 'tamagui';
+import { Input, Text, View } from 'tamagui';
 
 import type { RootStackScreenProps } from '../navigation';
 import {
@@ -25,6 +25,56 @@ interface Row {
   points: number;
 }
 
+type RaceHistoryFilter =
+  | 'all'
+  | 'finished'
+  | 'abandoned'
+  | 'has-track'
+  | 'this-week'
+  | 'last-30-days';
+
+const FILTER_TABS: { key: RaceHistoryFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'finished', label: 'Finished' },
+  { key: 'abandoned', label: 'Abandoned' },
+  { key: 'has-track', label: 'Has track' },
+  { key: 'this-week', label: 'This week' },
+  { key: 'last-30-days', label: '30 days' },
+];
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function applyHistoryFilter(
+  rows: Row[],
+  query: string,
+  filter: RaceHistoryFilter,
+  now: number = Date.now(),
+): Row[] {
+  const q = query.trim().toLowerCase();
+  return rows.filter((row) => {
+    if (q.length > 0) {
+      const startedAt = row.session.startedAt.toLowerCase();
+      const id = row.session.id.toLowerCase();
+      if (!startedAt.includes(q) && !id.includes(q)) return false;
+    }
+    switch (filter) {
+      case 'all':
+        return true;
+      case 'finished':
+        return row.session.state === 'finished';
+      case 'abandoned':
+        return row.session.state === 'abandoned';
+      case 'has-track':
+        return row.points > 0;
+      case 'this-week':
+        return now - new Date(row.session.startedAt).getTime() < WEEK_MS;
+      case 'last-30-days':
+        return now - new Date(row.session.startedAt).getTime() < THIRTY_DAYS_MS;
+    }
+  });
+}
+
 export function RaceSessionsScreen({
   navigation,
 }: RootStackScreenProps<'RaceSessions'>) {
@@ -32,6 +82,8 @@ export function RaceSessionsScreen({
   const theme = getTheme(nightMode ? 'night' : 'day');
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<RaceHistoryFilter>('all');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +100,11 @@ export function RaceSessionsScreen({
     const unsubscribe = navigation.addListener('focus', () => void load());
     return unsubscribe;
   }, [load, navigation]);
+
+  const filteredRows = useMemo(
+    () => applyHistoryFilter(rows, query, filter),
+    [rows, query, filter],
+  );
 
   function confirmDelete(row: Row) {
     Alert.alert(
@@ -95,6 +152,62 @@ export function RaceSessionsScreen({
           <View width={44} />
         </View>
 
+        {!loading && rows.length > 0 ? (
+          <>
+            <Input
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search by date or id…"
+              height={44}
+              paddingHorizontal={theme.space.md}
+              fontSize={theme.type.body.size}
+              borderColor={theme.border}
+              backgroundColor={theme.surface}
+              color={theme.text.primary}
+              placeholderTextColor={theme.text.muted}
+              marginBottom={theme.space.sm}
+            />
+            <View flexDirection="row" flexWrap="wrap" marginBottom={theme.space.sm}>
+              {FILTER_TABS.map((t) => {
+                const active = filter === t.key;
+                return (
+                  <Pressable
+                    key={t.key}
+                    onPress={() => setFilter(t.key)}
+                    accessibilityRole="tab"
+                  >
+                    <View
+                      paddingVertical={theme.space.xs}
+                      paddingHorizontal={theme.space.sm}
+                      borderRadius={theme.radius.full}
+                      backgroundColor={active ? theme.accent : 'transparent'}
+                      borderColor={active ? theme.accent : theme.border}
+                      borderWidth={1}
+                      marginRight={theme.space.xs}
+                      marginBottom={theme.space.xs}
+                    >
+                      <Text
+                        color={active ? theme.bg : theme.text.secondary}
+                        fontSize={theme.type.caption.size}
+                        fontWeight={theme.type.bodySemi.weight as '600'}
+                      >
+                        {t.label}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text
+              color={theme.text.muted}
+              fontSize={theme.type.caption.size}
+              marginBottom={theme.space.xs}
+            >
+              {filteredRows.length} of {rows.length} {rows.length === 1 ? 'race' : 'races'}
+            </Text>
+          </>
+        ) : null}
+
         {loading ? (
           <View flex={1} alignItems="center" justifyContent="center">
             <ActivityIndicator color={theme.text.muted} />
@@ -114,9 +227,20 @@ export function RaceSessionsScreen({
               appear here after the gun fires.
             </Text>
           </View>
+        ) : filteredRows.length === 0 ? (
+          <View flex={1} alignItems="center" justifyContent="center" padding={theme.space.lg}>
+            <Text
+              color={theme.text.muted}
+              fontSize={theme.type.body.size}
+              lineHeight={theme.type.body.lineHeight}
+              textAlign="center"
+            >
+              No races match this filter. Tap a different chip or clear the search.
+            </Text>
+          </View>
         ) : (
           <FlatList
-            data={rows}
+            data={filteredRows}
             keyExtractor={(r) => r.session.id}
             contentContainerStyle={{ paddingBottom: theme.space.xl }}
             renderItem={({ item }) => (
