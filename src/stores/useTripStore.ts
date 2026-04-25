@@ -33,8 +33,15 @@ export interface TripState {
   /** Last position processed; used to compute the delta. */
   lastLatitude: number | null;
   lastLongitude: number | null;
-  /** Max SOG (m/s) seen during the trip — for cruising crew bragging rights. */
+  /** Max SOG (m/s) seen during the current trip. Resets with the
+   *  trip. For lifetime, use `lifetimeMaxSogMps`. */
   maxSogMps: number;
+  /** Lifetime cruise distance — never resets. Trip resets fold the
+   *  current trip's distance into this counter. Drives the Sailing
+   *  Log's "total cruise miles" stat (Phase 1.10). */
+  lifetimeCruiseMetres: number;
+  /** Lifetime max SOG (m/s) — never resets. */
+  lifetimeMaxSogMps: number;
 }
 
 export interface TripActions {
@@ -52,6 +59,8 @@ const initialState: TripState = {
   lastLatitude: null,
   lastLongitude: null,
   maxSogMps: 0,
+  lifetimeCruiseMetres: 0,
+  lifetimeMaxSogMps: 0,
 };
 
 export const useTripStore = create<TripState & TripActions>()(
@@ -72,6 +81,10 @@ export const useTripStore = create<TripState & TripActions>()(
             lastLatitude: pos.latitude,
             lastLongitude: pos.longitude,
             maxSogMps: sog !== null && sog > state.maxSogMps ? sog : state.maxSogMps,
+            lifetimeMaxSogMps:
+              sog !== null && sog > state.lifetimeMaxSogMps
+                ? sog
+                : state.lifetimeMaxSogMps,
           });
           return;
         }
@@ -88,21 +101,34 @@ export const useTripStore = create<TripState & TripActions>()(
           return;
         }
 
+        const nextMax =
+          sog !== null && sog > state.maxSogMps ? sog : state.maxSogMps;
+        const nextLifetimeMax =
+          sog !== null && sog > state.lifetimeMaxSogMps
+            ? sog
+            : state.lifetimeMaxSogMps;
         set({
           distanceMetres: state.distanceMetres + delta,
           lastLatitude: pos.latitude,
           lastLongitude: pos.longitude,
-          maxSogMps: sog !== null && sog > state.maxSogMps ? sog : state.maxSogMps,
+          maxSogMps: nextMax,
+          lifetimeCruiseMetres: state.lifetimeCruiseMetres + delta,
+          lifetimeMaxSogMps: nextLifetimeMax,
         });
       },
-      reset: () =>
+      reset: () => {
+        // Folding rule: when the user resets the trip, the current
+        // trip distance is considered "done" — already counted into
+        // `lifetimeCruiseMetres` as it accumulated, so we don't add
+        // it again here. Just clear the trip-scoped state.
         set({
           startedAt: new Date().toISOString(),
           distanceMetres: 0,
           lastLatitude: null,
           lastLongitude: null,
           maxSogMps: 0,
-        }),
+        });
+      },
       pause: () => set({ lastLatitude: null, lastLongitude: null }),
     }),
     {
@@ -114,6 +140,8 @@ export const useTripStore = create<TripState & TripActions>()(
         lastLatitude: state.lastLatitude,
         lastLongitude: state.lastLongitude,
         maxSogMps: state.maxSogMps,
+        lifetimeCruiseMetres: state.lifetimeCruiseMetres,
+        lifetimeMaxSogMps: state.lifetimeMaxSogMps,
       }),
     },
   ),

@@ -118,6 +118,25 @@ const m0008_marks_colour_hint: Migration = async (db) => {
   `);
 };
 
+/** v9 — joined_boats. Personal sailing log records each boat-profile
+ *  bundle scanned. Drives "My sailing log" screen — list of boats,
+ *  join dates, marks added. Phase 1.10. */
+const m0009_joined_boats: Migration = async (db) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS joined_boats (
+      id TEXT PRIMARY KEY NOT NULL,
+      sender_id TEXT NOT NULL,
+      sender_name TEXT NOT NULL,
+      boat_name TEXT NOT NULL,
+      joined_at TEXT NOT NULL,
+      marks_added INTEGER NOT NULL,
+      polar_received INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_joined_boats_sender
+      ON joined_boats (sender_id, joined_at);
+  `);
+};
+
 /** v6 — race_track_points. 1Hz GPS samples during active race sessions. */
 const m0006_race_track_points: Migration = async (db) => {
   await db.execAsync(`
@@ -146,4 +165,5 @@ export const migrations: Migration[] = [
   m0006_race_track_points,
   m0007_courses_start_type,
   m0008_marks_colour_hint,
+  m0009_joined_boats,
 ];

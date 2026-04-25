@@ -12,6 +12,7 @@
 import { defaultValidityFor } from './markLifecycle';
 
 import { createCourse } from '../stores/coursesRepo';
+import { recordBoatJoin } from '../stores/joinedBoatsRepo';
 import { createMark, listMarks } from '../stores/marksRepo';
 import { useRaceStore } from '../stores/useRaceStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
@@ -228,6 +229,19 @@ export async function ingestBoatProfile(
     useSettingsStore.getState().setPolarRaw(payload.polarRaw);
     polarUpdated = true;
   }
+
+  // Personal sailor log — record this join event so it shows up in
+  // the lifetime sailing log + "Recent boats" list.
+  await recordBoatJoin(
+    {
+      senderId: payload.senderId,
+      senderName: payload.senderName,
+      boatName: payload.boatName,
+      marksAdded: marksCreated,
+      polarReceived: polarUpdated,
+    },
+    now,
+  );
 
   return { marksCreated, marksReused, polarUpdated };
 }
