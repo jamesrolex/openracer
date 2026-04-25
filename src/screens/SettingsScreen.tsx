@@ -57,6 +57,8 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
   );
   const manualTrueWindKn = useSettingsStore((s) => s.manualTrueWindKn);
   const setManualTrueWindKn = useSettingsStore((s) => s.setManualTrueWindKn);
+  const voiceCuesEnabled = useSettingsStore((s) => s.voiceCuesEnabled);
+  const setVoiceCuesEnabled = useSettingsStore((s) => s.setVoiceCuesEnabled);
   const polarRaw = useSettingsStore((s) => s.polarRaw);
   const setPolarRaw = useSettingsStore((s) => s.setPolarRaw);
   const boatName = useSettingsStore((s) => s.boatName);
@@ -157,6 +159,13 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
             value={manualTrueWindKn}
             onChange={setManualTrueWindKn}
           />
+          <BooleanRow
+            theme={theme}
+            label="Voice race-officer cues"
+            description="Spoken countdown — every minute, then 30, 20, 10, 5...gun!"
+            value={voiceCuesEnabled}
+            onChange={setVoiceCuesEnabled}
+          />
         </Section>
 
         <Section
@@ -190,6 +199,12 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
             label="Race history"
             description="Past race sessions with duration + distance + points."
             onPress={() => navigation.navigate('RaceSessions')}
+          />
+          <LinkRow
+            theme={theme}
+            label="Leaderboard"
+            description="Finish times collected from competitors via QR."
+            onPress={() => navigation.navigate('Leaderboard')}
           />
           <LinkRow
             theme={theme}
@@ -653,5 +668,65 @@ function BoatNameRow({
         placeholderTextColor={theme.text.muted}
       />
     </View>
+  );
+}
+
+function BooleanRow({
+  theme,
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  theme: ReturnType<typeof getTheme>;
+  label: string;
+  description: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <Pressable onPress={() => onChange(!value)} hitSlop={4}>
+      <View
+        paddingVertical={theme.space.xs}
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="space-between"
+      >
+        <View flex={1} paddingRight={theme.space.md}>
+          <Text
+            color={theme.text.primary}
+            fontSize={theme.type.body.size}
+            fontWeight={theme.type.bodySemi.weight as '600'}
+          >
+            {label}
+          </Text>
+          <Text
+            color={theme.text.muted}
+            fontSize={theme.type.caption.size}
+            lineHeight={theme.type.caption.lineHeight}
+            marginTop={2}
+          >
+            {description}
+          </Text>
+        </View>
+        <View
+          width={56}
+          height={32}
+          borderRadius={16}
+          backgroundColor={value ? theme.accent : theme.border}
+          paddingHorizontal={3}
+          flexDirection="row"
+          alignItems="center"
+          justifyContent={value ? 'flex-end' : 'flex-start'}
+        >
+          <View
+            width={26}
+            height={26}
+            borderRadius={13}
+            backgroundColor={theme.bg}
+          />
+        </View>
+      </View>
+    </Pressable>
   );
 }

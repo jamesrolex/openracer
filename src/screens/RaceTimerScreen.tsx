@@ -29,6 +29,7 @@ import {
   scheduleForStart,
 } from '../domain/raceNotifications';
 import { formatCountdown, makeSnapshot } from '../domain/raceTimer';
+import { cueFor, speakCue, stopSpeaking } from '../domain/voiceCues';
 import type { RootStackScreenProps } from '../navigation';
 import { useCoursesStore } from '../stores/useCoursesStore';
 import { useMarksStore } from '../stores/useMarksStore';
@@ -73,6 +74,7 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const setHelmMode = useSettingsStore((s) => s.setHelmDisplayMode);
   const lastRaceDashboardId = useSettingsStore((s) => s.lastRaceDashboardId);
   const setLastRaceDashboardId = useSettingsStore((s) => s.setLastRaceDashboardId);
+  const voiceCuesEnabled = useSettingsStore((s) => s.voiceCuesEnabled);
   const polarRaw = useSettingsStore((s) => s.polarRaw);
   const trueWindKn = useSettingsStore((s) => s.manualTrueWindKn);
   const trueWindDeg = useSettingsStore((s) => s.manualTrueWindDegrees);
@@ -98,6 +100,7 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   );
   const lastMinuteFiredRef = useRef<number | null>(null);
   const startGunFiredRef = useRef(false);
+  const lastVoiceCuedRef = useRef<number | null>(null);
 
   // Tick.
   useEffect(() => {
@@ -128,12 +131,46 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
       void setActiveSessionState('running');
     }
     if (snapshot.state === 'idle' || snapshot.state === 'postponed') {
-      // Reset both refs so a fresh post-AP countdown re-fires the minute
-      // haptics + the gun haptic exactly once.
+      // Reset all refs so a fresh post-AP countdown re-fires the minute
+      // haptics, gun haptic, and voice cues exactly once.
       lastMinuteFiredRef.current = null;
       startGunFiredRef.current = false;
+      lastVoiceCuedRef.current = null;
     }
   }, [snapshot, setActiveSessionState]);
+
+  // Voice race-officer cues. Phase 1.12.
+  // expo-speech is best-effort; cue refs guarantee one-shot firing per
+  // countdown second even though the timer ticks 4× per second.
+  useEffect(() => {
+    if (!voiceCuesEnabled) return;
+    if (snapshot.state === 'postponed' || snapshot.state === 'idle') {
+      stopSpeaking();
+      return;
+    }
+    if (
+      snapshot.state !== 'counting-down' &&
+      snapshot.state !== 'armed' &&
+      snapshot.state !== 'starting'
+    ) {
+      return;
+    }
+    // Use round-down rather than round-nearest so each integer second
+    // window fires exactly once when the snapshot crosses it.
+    const second = Math.floor(snapshot.millisecondsToStart / 1000);
+    if (second < 0) return;
+    if (lastVoiceCuedRef.current === second) return;
+    const cue = cueFor(second);
+    if (cue) {
+      lastVoiceCuedRef.current = second;
+      speakCue(cue.phrase);
+    }
+  }, [snapshot, voiceCuesEnabled]);
+
+  // Cancel voice on unmount (helps if the user navigates away mid-cue).
+  useEffect(() => {
+    return () => stopSpeaking();
+  }, []);
 
   // Schedule / cancel notifications in response to timer state.
   // Postponement cancels them; dropping AP (which changes sequenceStartTime)

@@ -54,6 +54,9 @@ export interface SettingsState {
   lastRaceDashboardId: string | null;
   /** Last-shown dashboard id while no race was armed. Phase 1.8. */
   lastCruiseDashboardId: string | null;
+  /** Voice race-officer cues during the start sequence. Default: on.
+   *  Phase 1.12. */
+  voiceCuesEnabled: boolean;
 }
 
 export interface SettingsActions {
@@ -70,6 +73,7 @@ export interface SettingsActions {
   setBoatName: (name: string | null) => void;
   setLastRaceDashboardId: (id: string | null) => void;
   setLastCruiseDashboardId: (id: string | null) => void;
+  setVoiceCuesEnabled: (on: boolean) => void;
 }
 
 const defaults: SettingsState = {
@@ -87,6 +91,7 @@ const defaults: SettingsState = {
   boatName: null,
   lastRaceDashboardId: null,
   lastCruiseDashboardId: null,
+  voiceCuesEnabled: true,
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -112,6 +117,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setBoatName: (boatName) => set({ boatName }),
       setLastRaceDashboardId: (lastRaceDashboardId) => set({ lastRaceDashboardId }),
       setLastCruiseDashboardId: (lastCruiseDashboardId) => set({ lastCruiseDashboardId }),
+      setVoiceCuesEnabled: (voiceCuesEnabled) => set({ voiceCuesEnabled }),
     }),
     {
       name: 'openracer.settings',
@@ -131,6 +137,7 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         boatName: state.boatName,
         lastRaceDashboardId: state.lastRaceDashboardId,
         lastCruiseDashboardId: state.lastCruiseDashboardId,
+        voiceCuesEnabled: state.voiceCuesEnabled,
       }),
     },
   ),
