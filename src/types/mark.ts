@@ -80,6 +80,10 @@ export interface Mark {
   confidence: number;
   /** Optional free-text note the sailor attached. */
   notes?: string;
+  /** Optional short colour hint — "yellow", "yellow w/ white top", "orange
+   *  offset", etc. Rendered as a swatch dot + label in the picker so a
+   *  sailor can spot the right physical mark from a hundred metres away. */
+  colourHint?: string;
 }
 
 /** Fields supplied when creating a mark. Id, confidence, timestamps derive. */

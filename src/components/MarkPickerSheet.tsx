@@ -18,6 +18,7 @@ import { Input, Text, View } from 'tamagui';
 
 import { formatDistance } from '../utils/format';
 import { sortMarksByDistance } from '../utils/nearestMarks';
+import { swatchColour } from './MarkCard';
 import { getTheme } from '../theme/theme';
 import type { Mark, MarkTier } from '../types/mark';
 import type { GeoPosition } from '../types/signalk';
@@ -279,14 +280,51 @@ export function MarkPickerSheet({
                       opacity={disabled ? 0.4 : 1}
                     >
                       <View flex={1}>
-                        <Text
-                          color={theme.text.primary}
-                          fontSize={theme.type.h3.size}
-                          fontWeight={theme.type.h3.weight as '600'}
-                        >
-                          {item.mark.name}
-                          {disabled ? '  · already in course' : ''}
-                        </Text>
+                        <View flexDirection="row" alignItems="center">
+                          <Text
+                            color={theme.text.primary}
+                            fontSize={theme.type.h3.size}
+                            fontWeight={theme.type.h3.weight as '600'}
+                            flex={1}
+                          >
+                            {item.mark.name}
+                            {disabled ? '  · already in course' : ''}
+                          </Text>
+                          {item.mark.colourHint ? (
+                            <View
+                              flexDirection="row"
+                              alignItems="center"
+                              marginLeft={theme.space.xs}
+                            >
+                              <View
+                                width={10}
+                                height={10}
+                                borderRadius={5}
+                                backgroundColor={swatchColour(
+                                  item.mark.colourHint,
+                                  theme,
+                                )}
+                                marginRight={4}
+                              />
+                              <Text
+                                color={theme.text.secondary}
+                                fontSize={theme.type.caption.size}
+                              >
+                                {item.mark.colourHint}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        {item.mark.notes ? (
+                          <Text
+                            color={theme.text.muted}
+                            fontSize={theme.type.caption.size}
+                            marginTop={2}
+                            numberOfLines={1}
+                          >
+                            {item.mark.notes}
+                          </Text>
+                        ) : null}
                         <Text
                           color={theme.text.muted}
                           fontSize={theme.type.caption.size}

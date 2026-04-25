@@ -96,15 +96,38 @@ export function MarkCard({ mark, onPress, variant = 'day' }: MarkCardProps) {
         </View>
 
         <View flex={1}>
-          <Text
-            color={theme.text.primary}
-            fontSize={theme.type.h3.size}
-            fontWeight={theme.type.h3.weight as '600'}
-            lineHeight={theme.type.h3.lineHeight}
-            marginBottom={2}
-          >
-            {mark.name}
-          </Text>
+          <View flexDirection="row" alignItems="center" marginBottom={2}>
+            <Text
+              color={theme.text.primary}
+              fontSize={theme.type.h3.size}
+              fontWeight={theme.type.h3.weight as '600'}
+              lineHeight={theme.type.h3.lineHeight}
+              flex={1}
+            >
+              {mark.name}
+            </Text>
+            {mark.colourHint ? (
+              <View
+                flexDirection="row"
+                alignItems="center"
+                marginLeft={theme.space.xs}
+              >
+                <View
+                  width={10}
+                  height={10}
+                  borderRadius={5}
+                  backgroundColor={swatchColour(mark.colourHint, theme)}
+                  marginRight={4}
+                />
+                <Text
+                  color={theme.text.secondary}
+                  fontSize={theme.type.caption.size}
+                >
+                  {mark.colourHint}
+                </Text>
+              </View>
+            ) : null}
+          </View>
           <Text
             color={theme.text.secondary}
             fontSize={theme.type.caption.size}
@@ -113,6 +136,17 @@ export function MarkCard({ mark, onPress, variant = 'day' }: MarkCardProps) {
           >
             {coords}
           </Text>
+          {mark.notes ? (
+            <Text
+              color={theme.text.muted}
+              fontSize={theme.type.caption.size}
+              lineHeight={theme.type.caption.lineHeight}
+              marginBottom={theme.space.xs}
+              numberOfLines={1}
+            >
+              {mark.notes}
+            </Text>
+          ) : null}
           <View flexDirection="row" alignItems="center">
             <View
               paddingVertical={2}
@@ -155,4 +189,26 @@ function tierAccent(tier: MarkTier, theme: ReturnType<typeof getTheme>): string 
     case 'single-race-temporary':
       return theme.status.offline;
   }
+}
+
+/**
+ * Map a free-text colour-hint to a CSS-recognisable swatch colour.
+ * Falls back to a neutral grey when the text isn't a recognised
+ * colour name (e.g. "yellow w/ white top" → still picks "yellow").
+ */
+export function swatchColour(
+  hint: string,
+  theme: ReturnType<typeof getTheme>,
+): string {
+  const lc = hint.toLowerCase();
+  if (lc.includes('yellow')) return '#F2C744';
+  if (lc.includes('orange')) return '#E67E22';
+  if (lc.includes('red')) return '#D14B3F';
+  if (lc.includes('green')) return '#3FA76A';
+  if (lc.includes('blue')) return '#3F7BD1';
+  if (lc.includes('white')) return '#F2F2F2';
+  if (lc.includes('black')) return '#1A1A1A';
+  if (lc.includes('pink')) return '#E66BB1';
+  if (lc.includes('purple')) return '#9B59B6';
+  return theme.text.muted;
 }

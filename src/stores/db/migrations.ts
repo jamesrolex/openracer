@@ -109,6 +109,15 @@ const m0007_courses_start_type: Migration = async (db) => {
   `);
 };
 
+/** v8 — marks.colour_hint. Short free-text colour cue ("yellow",
+ *  "yellow w/ white top") so the picker can render a swatch + label.
+ *  Nullable; existing marks just don't have one until edited. */
+const m0008_marks_colour_hint: Migration = async (db) => {
+  await db.execAsync(`
+    ALTER TABLE marks ADD COLUMN colour_hint TEXT;
+  `);
+};
+
 /** v6 — race_track_points. 1Hz GPS samples during active race sessions. */
 const m0006_race_track_points: Migration = async (db) => {
   await db.execAsync(`
@@ -136,4 +145,5 @@ export const migrations: Migration[] = [
   m0005_committee_trust,
   m0006_race_track_points,
   m0007_courses_start_type,
+  m0008_marks_colour_hint,
 ];

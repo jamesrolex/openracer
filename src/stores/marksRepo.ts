@@ -30,6 +30,7 @@ interface MarkRow {
   valid_until: string | null;
   owner: string;
   notes: string | null;
+  colour_hint: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,6 +50,7 @@ function rowToMark(row: MarkRow, now: Date): Mark {
     owner: row.owner,
     confidence: 0, // placeholder, overwritten below
     notes: row.notes ?? undefined,
+    colourHint: row.colour_hint ?? undefined,
   };
   mark.confidence = deriveConfidence(mark, now);
   return mark;
@@ -72,8 +74,9 @@ export async function createMark(input: MarkInput, now: Date = new Date()): Prom
   await db.runAsync(
     `INSERT INTO marks (
        id, name, latitude, longitude, tier, source, icon, shape,
-       valid_from, valid_until, owner, notes, created_at, updated_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+       valid_from, valid_until, owner, notes, colour_hint,
+       created_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     id,
     input.name,
     input.latitude,
@@ -86,6 +89,7 @@ export async function createMark(input: MarkInput, now: Date = new Date()): Prom
     input.validUntil,
     input.owner,
     input.notes ?? null,
+    input.colourHint ?? null,
     nowIso,
     nowIso,
   );
@@ -115,7 +119,7 @@ export async function updateMark(
     `UPDATE marks SET
        name = ?, latitude = ?, longitude = ?, tier = ?, source = ?,
        icon = ?, shape = ?, valid_from = ?, valid_until = ?,
-       owner = ?, notes = ?, updated_at = ?
+       owner = ?, notes = ?, colour_hint = ?, updated_at = ?
      WHERE id = ?;`,
     next.name,
     next.latitude,
@@ -128,6 +132,7 @@ export async function updateMark(
     next.validUntil,
     next.owner,
     next.notes ?? null,
+    next.colourHint ?? null,
     now.toISOString(),
     id,
   );

@@ -81,6 +81,7 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
   const [icon, setIcon] = useState<MarkIcon>('racing-yellow');
   const [shape, setShape] = useState<MarkShape>('spherical');
   const [notes, setNotes] = useState('');
+  const [colourHint, setColourHint] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -101,6 +102,7 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
       setIcon(existing.icon);
       setShape(existing.shape);
       setNotes(existing.notes ?? '');
+      setColourHint(existing.colourHint ?? '');
     })();
   }, [markId, navigation]);
 
@@ -147,6 +149,7 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
         validUntil: validity.validUntil,
         owner: 'Me',
         notes: notes.trim() || undefined,
+        colourHint: colourHint.trim() || undefined,
       };
       if (editing && markId) {
         await update(markId, input);
@@ -359,6 +362,22 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
             );
           })}
         </View>
+
+        <Label theme={theme}>Colour hint (optional)</Label>
+        <Input
+          value={colourHint}
+          onChangeText={setColourHint}
+          placeholder="e.g. “yellow”, “orange w/ white top”"
+          height={44}
+          paddingHorizontal={theme.space.md}
+          fontSize={theme.type.body.size}
+          borderColor={theme.border}
+          backgroundColor={theme.surface}
+          color={theme.text.primary}
+          placeholderTextColor={theme.text.muted}
+          marginBottom={theme.space.md}
+          autoCapitalize="none"
+        />
 
         <Label theme={theme}>Notes (optional)</Label>
         <Input
