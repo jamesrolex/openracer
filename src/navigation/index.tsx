@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { CommitteeIdentityScreen } from '../screens/CommitteeIdentityScreen';
 import { CourseEntryScreen } from '../screens/CourseEntryScreen';
+import { CourseLibraryScreen } from '../screens/CourseLibraryScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MarkBearingScreen } from '../screens/MarkBearingScreen';
 import { MarkEditScreen } from '../screens/MarkEditScreen';
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   /** `markId` present = edit; absent = create new. */
   MarkEdit: { markId?: string };
   CourseEntry: undefined;
+  CourseLibrary: undefined;
   /** Open the bearing + distance flow; computed mark drops into `legId` on save. */
   MarkBearing: { legId: string };
   /** Point-at-mark triangulation flow; result drops into `legId`. */
@@ -66,6 +68,7 @@ export function RootNavigator() {
       <Stack.Screen name="MarkLibrary" component={MarkLibraryScreen} />
       <Stack.Screen name="MarkEdit" component={MarkEditScreen} />
       <Stack.Screen name="CourseEntry" component={CourseEntryScreen} />
+      <Stack.Screen name="CourseLibrary" component={CourseLibraryScreen} />
       <Stack.Screen name="MarkBearing" component={MarkBearingScreen} />
       <Stack.Screen name="MarkPointAt" component={MarkPointAtScreen} />
       <Stack.Screen name="CommitteeIdentity" component={CommitteeIdentityScreen} />

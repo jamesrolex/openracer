@@ -14,12 +14,17 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input, Text, View } from 'tamagui';
 
 import { MarkPickerSheet } from '../components/MarkPickerSheet';
+import {
+  PreRaceChecklist,
+  buildChecklist,
+} from '../components/PreRaceChecklist';
 import { defaultValidityFor } from '../domain/markLifecycle';
+import { checkNotificationPermissions } from '../domain/raceNotifications';
 import {
   COURSE_TEMPLATES,
   appendRoundingLeg,
@@ -43,7 +48,9 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   const variant = nightMode ? 'night' : 'day';
 
   const position = useBoatStore((s) => s.position);
+  const lastUpdate = useBoatStore((s) => s.lastUpdate);
   const marks = useMarksStore((s) => s.marks);
+  const manualTrueWindDegrees = useSettingsStore((s) => s.manualTrueWindDegrees);
   const refreshMarks = useMarksStore((s) => s.refresh);
   const createMark = useMarksStore((s) => s.create);
 
@@ -60,6 +67,8 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   const [startType, setStartType] = useState<StartType>(draft?.startType ?? 'standard-line');
   const [pickerForLeg, setPickerForLeg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
+  const [notificationsGranted, setNotificationsGranted] = useState(false);
 
   useEffect(() => {
     void refreshMarks();
@@ -207,6 +216,19 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   }
 
   async function handleArmTimer() {
+    // Refresh the notifications-permission read just before opening the
+    // checklist so the row reflects the current OS state, not a stale
+    // boot-time value.
+    try {
+      const granted = await checkNotificationPermissions();
+      setNotificationsGranted(granted);
+    } catch {
+      setNotificationsGranted(false);
+    }
+    setChecklistOpen(true);
+  }
+
+  async function performArm() {
     const id = await ensureDraft();
     // Arm for a T-5 countdown starting roughly now. syncToNextWholeMinute
     // inside the store will snap the exact gun time to the next whole
@@ -214,6 +236,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
     const gun = new Date(Date.now() + 5 * 60_000);
     await useRaceStore.getState().arm(gun, id);
     useBoatStore.getState().setMode('race');
+    setChecklistOpen(false);
     navigation.navigate('RaceTimer');
   }
 
@@ -267,19 +290,37 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
           >
             Build course
           </Text>
-          {draft ? (
-            <Pressable onPress={handleDiscard} hitSlop={8} accessibilityLabel="Discard">
+          <View flexDirection="row" alignItems="center">
+            <Pressable
+              onPress={() => navigation.navigate('CourseLibrary')}
+              hitSlop={8}
+              accessibilityLabel="Saved courses"
+            >
               <Text
-                color={theme.status.danger}
+                color={theme.accent}
                 fontSize={theme.type.body.size}
                 fontWeight={theme.type.bodySemi.weight as '600'}
               >
-                Discard
+                Load
               </Text>
             </Pressable>
-          ) : (
-            <View width={64} />
-          )}
+            {draft ? (
+              <Pressable
+                onPress={handleDiscard}
+                hitSlop={8}
+                accessibilityLabel="Discard"
+              >
+                <Text
+                  color={theme.status.danger}
+                  fontSize={theme.type.body.size}
+                  fontWeight={theme.type.bodySemi.weight as '600'}
+                  marginLeft={theme.space.md}
+                >
+                  Discard
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
 
         <SectionLabel theme={theme}>Template</SectionLabel>
@@ -517,6 +558,35 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
           </Pressable>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={checklistOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setChecklistOpen(false)}
+      >
+        <View
+          flex={1}
+          padding={theme.space.lg}
+          justifyContent="center"
+          backgroundColor="rgba(0,0,0,0.45)"
+        >
+          <PreRaceChecklist
+            items={buildChecklist({
+              course: draft,
+              windDirectionSet: manualTrueWindDegrees !== null,
+              gpsFresh:
+                lastUpdate !== null &&
+                Date.now() - new Date(lastUpdate).getTime() < 5000,
+              notificationsGranted,
+              rabbitLaunchSet: false,
+            })}
+            onArm={() => void performArm()}
+            onCancel={() => setChecklistOpen(false)}
+            variant={variant}
+          />
+        </View>
+      </Modal>
 
       <MarkPickerSheet
         visible={pickerForLeg !== null}
