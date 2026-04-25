@@ -25,7 +25,7 @@ const LEG_SHORT: Record<Leg['type'], string> = {
 export interface CourseStripProps {
   course: Course;
   onPress?: () => void;
-  variant?: 'day' | 'night';
+  variant?: 'day' | 'night' | 'kindle';
 }
 
 export function CourseStrip({ course, onPress, variant = 'day' }: CourseStripProps) {

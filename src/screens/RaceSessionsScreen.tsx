@@ -78,8 +78,8 @@ export function applyHistoryFilter(
 export function RaceSessionsScreen({
   navigation,
 }: RootStackScreenProps<'RaceSessions'>) {
-  const nightMode = useSettingsStore((s) => s.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((s) => s.theme);
+  const theme = getTheme(themeVariant);
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');

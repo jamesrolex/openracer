@@ -51,8 +51,8 @@ function formatLastUsed(iso: string): string {
 }
 
 export function CourseLibraryScreen({ navigation }: RootStackScreenProps<'CourseLibrary'>) {
-  const nightMode = useSettingsStore((s) => s.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((s) => s.theme);
+  const theme = getTheme(themeVariant);
 
   const recent = useCoursesStore((s) => s.recent);
   const activeDraft = useCoursesStore((s) => s.activeDraft);

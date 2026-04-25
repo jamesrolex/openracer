@@ -24,7 +24,7 @@ interface Props {
   previousGunTime: string | null;
   /** ISO timestamp of when the previous gun was captured. */
   previousGunCapturedAt: string | null;
-  variant: 'day' | 'night';
+  variant: 'day' | 'night' | 'kindle';
 }
 
 export function GunSyncButton({

@@ -25,8 +25,8 @@ import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
 
 export function ShareCourseScreen({ navigation }: RootStackScreenProps<'ShareCourse'>) {
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
 
   const identity = useCommitteeIdentityStore((s) => s.identity);
   const draft = useCoursesStore((s) => s.activeDraft);

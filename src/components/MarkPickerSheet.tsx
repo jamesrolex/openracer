@@ -50,7 +50,7 @@ export interface MarkPickerSheetProps {
   /** Optional — point-at-mark triangulation. Hidden if no handler. */
   onPointAtMark?: () => void;
   onCancel: () => void;
-  variant?: 'day' | 'night';
+  variant?: 'day' | 'night' | 'kindle';
 }
 
 export function MarkPickerSheet({

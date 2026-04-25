@@ -30,7 +30,7 @@ interface Props {
   rabbitLaunchAt: string | null;
   /** Called when the RC taps "Rabbit launched!". */
   onLaunch: () => void;
-  variant: 'day' | 'night';
+  variant: 'day' | 'night' | 'kindle';
 }
 
 export function RabbitStartPanel({

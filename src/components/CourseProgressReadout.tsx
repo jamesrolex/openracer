@@ -17,7 +17,7 @@ import { getTheme } from '../theme/theme';
 interface Props {
   sailedMetres: number;
   totalMetres: number;
-  variant: 'day' | 'night';
+  variant: 'day' | 'night' | 'kindle';
 }
 
 export function CourseProgressReadout({

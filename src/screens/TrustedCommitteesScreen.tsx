@@ -17,8 +17,8 @@ import { getTheme } from '../theme/theme';
 export function TrustedCommitteesScreen({
   navigation,
 }: RootStackScreenProps<'TrustedCommittees'>) {
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
 
   const trusted = useCommitteeTrustStore((s) => s.trusted);
   const refresh = useCommitteeTrustStore((s) => s.refresh);

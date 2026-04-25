@@ -42,9 +42,9 @@ const MIN_BASELINE_METRES = 20;
 
 export function MarkPointAtScreen({ navigation, route }: RootStackScreenProps<'MarkPointAt'>) {
   const legId = route.params.legId;
-  const nightMode = useSettingsStore((s) => s.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
-  const variant = nightMode ? 'night' : 'day';
+  const themeVariant = useSettingsStore((s) => s.theme);
+  const theme = getTheme(themeVariant);
+  const variant = themeVariant;
 
   const compass = useCompass(true);
   const position = useBoatStore((s) => s.position);

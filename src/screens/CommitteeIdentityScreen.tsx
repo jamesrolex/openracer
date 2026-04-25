@@ -22,8 +22,8 @@ import { getTheme } from '../theme/theme';
 export function CommitteeIdentityScreen({
   navigation,
 }: RootStackScreenProps<'CommitteeIdentity'>) {
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
 
   const identity = useCommitteeIdentityStore((s) => s.identity);
   const createIdentity = useCommitteeIdentityStore((s) => s.create);

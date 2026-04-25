@@ -38,9 +38,9 @@ const EMPTY_COPY: Record<TierFilter, string> = {
 };
 
 export function MarkLibraryScreen({ navigation }: RootStackScreenProps<'MarkLibrary'>) {
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
-  const variant = nightMode ? 'night' : 'day';
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
+  const variant = themeVariant;
 
   const marks = useMarksStore((s) => s.marks);
   const refresh = useMarksStore((s) => s.refresh);

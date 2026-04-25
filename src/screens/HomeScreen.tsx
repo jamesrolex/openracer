@@ -40,8 +40,8 @@ const STALE_AFTER_MS = 3000;
 const PLACEHOLDER = '—';
 
 export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
 
   const draft = useCoursesStore((state) => state.activeDraft);
   const marks = useMarksStore((state) => state.marks);
@@ -80,7 +80,7 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
   const latEmphasis = position === null ? 'muted' : 'secondary';
   const lonEmphasis = position === null ? 'muted' : 'secondary';
 
-  const variant = nightMode ? 'night' : 'day';
+  const variant = themeVariant;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>

@@ -19,7 +19,7 @@ import { useSettingsStore } from './src/stores/useSettingsStore';
 import tamaguiConfig from './tamagui.config';
 
 export default function App() {
-  const nightMode = useSettingsStore((state) => state.nightMode);
+  const themeVariant = useSettingsStore((state) => state.theme);
   const onboardingCompleted = useSettingsStore((state) => state.onboardingCompleted);
   const refreshMarks = useMarksStore((s) => s.refresh);
   const hydrateCourses = useCoursesStore((s) => s.hydrate);
@@ -39,7 +39,10 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <TamaguiProvider config={tamaguiConfig} defaultTheme={nightMode ? 'night' : 'day'}>
+        <TamaguiProvider
+          config={tamaguiConfig}
+          defaultTheme={themeVariant === 'night' ? 'night' : 'day'}
+        >
           {onboardingCompleted ? (
             <NavigationContainer>
               <RootNavigator />
@@ -48,7 +51,7 @@ export default function App() {
             <OnboardingScreen />
           )}
           {__DEV__ ? <DevPanel /> : null}
-          <StatusBar style={nightMode ? 'light' : 'dark'} />
+          <StatusBar style={themeVariant === 'night' ? 'light' : 'dark'} />
         </TamaguiProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -29,9 +29,9 @@ const CARDS: { title: string; body: string }[] = [
 ];
 
 export function OnboardingScreen() {
-  const nightMode = useSettingsStore((s) => s.nightMode);
+  const themeVariant = useSettingsStore((s) => s.theme);
   const complete = useSettingsStore((s) => s.completeOnboarding);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const theme = getTheme(themeVariant);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>

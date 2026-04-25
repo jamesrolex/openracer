@@ -17,7 +17,7 @@ import { getTheme } from '../theme/theme';
 
 interface Props {
   bias: LineBias | null;
-  variant: 'day' | 'night';
+  variant: 'day' | 'night' | 'kindle';
 }
 
 export function FavouredEndChip({ bias, variant }: Props) {

@@ -15,8 +15,15 @@ import { Text, View } from 'tamagui';
 
 import { CourseProgressReadout } from '../components/CourseProgressReadout';
 import { GunSyncButton } from '../components/GunSyncButton';
+import { HelmDisplayLayout } from '../components/HelmDisplayLayout';
 import { RabbitStartPanel } from '../components/RabbitStartPanel';
+import { WindShiftBar } from '../components/WindShiftBar';
+import { useBoatStore } from '../stores/useBoatStore';
 import { computeCourseDistance } from '../domain/courseDistance';
+import { evaluatePolar, parsePolarTable } from '../domain/polars';
+import { computeBoatStartState } from '../domain/startLine';
+import { useWindShiftTracker } from '../hooks/useWindShiftTracker';
+import { metresPerSecondToKnots } from '../utils/format';
 import {
   cancelAllRaceNotifications,
   requestNotificationPermissions,
@@ -32,9 +39,9 @@ import { getTheme } from '../theme/theme';
 import type { RaceState } from '../types/race';
 
 export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'>) {
-  const nightMode = useSettingsStore((s) => s.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
-  const variant = nightMode ? 'night' : 'day';
+  const themeVariant = useSettingsStore((s) => s.theme);
+  const theme = getTheme(themeVariant);
+  const variant = themeVariant;
 
   const sequenceStartTime = useRaceStore((s) => s.sequenceStartTime);
   const sequence = useRaceStore((s) => s.sequence);
@@ -62,6 +69,44 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const marks = useMarksStore((s) => s.marks);
   const totalMetres =
     draft !== null ? computeCourseDistance(draft.legs, marks).totalMetres : 0;
+
+  const helmMode = useSettingsStore((s) => s.helmDisplayMode);
+  const setHelmMode = useSettingsStore((s) => s.setHelmDisplayMode);
+  const polarRaw = useSettingsStore((s) => s.polarRaw);
+  const trueWindKn = useSettingsStore((s) => s.manualTrueWindKn);
+  const trueWindDeg = useSettingsStore((s) => s.manualTrueWindDegrees);
+
+  const windShift = useWindShiftTracker();
+
+  // Compute target boatspeed when we have polar + wind + COG.
+  const polar = polarRaw ? parsePolarTable(polarRaw).table : null;
+  const targetSpeedKn = (() => {
+    if (!polar || trueWindKn === null || trueWindDeg === null) return null;
+    const cogVal = useBoatStore.getState().cog;
+    if (cogVal === null) return null;
+    // TWA = |TWD - COG| normalised to 0-180.
+    const raw = Math.abs(((trueWindDeg - cogVal + 540) % 360) - 180);
+    return evaluatePolar(polar, trueWindKn, raw);
+  })();
+
+  // Helm display needs the live start-line geometry. Recomputed cheaply
+  // each render since this screen is the only consumer.
+  const position = useBoatStore((s) => s.position);
+  const cog = useBoatStore((s) => s.cog);
+  const sog = useBoatStore((s) => s.sog);
+  const startLeg = draft?.legs.find((l) => l.type === 'start');
+  const cb = marks.find((m) => m.id === startLeg?.markIds[0]);
+  const pin = marks.find((m) => m.id === startLeg?.markIds[1]);
+  const startLineState =
+    cb && pin && position && draft?.startType === 'standard-line'
+      ? computeBoatStartState(
+          position,
+          cog,
+          sog,
+          { latitude: cb.latitude, longitude: cb.longitude },
+          { latitude: pin.latitude, longitude: pin.longitude },
+        )
+      : null;
 
   const [snapshot, setSnapshot] = useState(() =>
     makeSnapshot(sequenceStartTime, new Date(), sequence, {
@@ -217,6 +262,28 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const primaryLabel = formatCountdown(snapshot.secondsToStart);
   const stateLabel = labelForState(snapshot.state);
 
+  // Helm Display Mode — strip everything but the countdown + a single
+  // secondary readout. Long-press inside the layout exits.
+  if (helmMode) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top', 'bottom']}>
+        <HelmDisplayLayout
+          snapshot={snapshot}
+          distanceToLineMetres={
+            startLineState?.side === 'behind'
+              ? -Math.abs(startLineState.distanceMetres)
+              : startLineState?.distanceMetres ?? null
+          }
+          secondsToLine={startLineState?.secondsToLine ?? null}
+          totalCourseMetres={totalMetres}
+          sailedMetres={sailedMetres}
+          onExit={() => setHelmMode(false)}
+          variant={variant}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
       <ScrollView
@@ -299,6 +366,21 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
                 sailedMetres={sailedMetres}
                 totalMetres={totalMetres}
                 variant={variant}
+              />
+            ) : null}
+
+            {snapshot.state === 'starting' ||
+            snapshot.state === 'running' ||
+            snapshot.state === 'individual-recall' ? (
+              <WindShiftBar snapshot={windShift} variant={variant} />
+            ) : null}
+
+            {targetSpeedKn !== null &&
+            (snapshot.state === 'starting' || snapshot.state === 'running') ? (
+              <TargetSpeedStrip
+                targetKn={targetSpeedKn}
+                actualKn={metresPerSecondToKnots(useBoatStore.getState().sog ?? 0)}
+                theme={theme}
               />
             ) : null}
 
@@ -444,6 +526,22 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
                 />
               )}
             </View>
+
+            <Pressable
+              onPress={() => setHelmMode(true)}
+              accessibilityLabel="Helm display"
+              hitSlop={8}
+            >
+              <Text
+                color={theme.text.muted}
+                fontSize={theme.type.caption.size}
+                fontWeight={theme.type.bodySemi.weight as '600'}
+                textAlign="center"
+                marginTop={theme.space.sm}
+              >
+                ◐ Helm display (kiosk)
+              </Text>
+            </Pressable>
           </>
         ) : (
           <View alignItems="center" paddingVertical={theme.space.lg}>
@@ -582,4 +680,74 @@ function signalLabel(signal: 'warning' | 'preparatory' | 'one-minute' | 'start')
     case 'start':
       return 'start';
   }
+}
+
+function TargetSpeedStrip({
+  targetKn,
+  actualKn,
+  theme,
+}: {
+  targetKn: number;
+  actualKn: number;
+  theme: ReturnType<typeof getTheme>;
+}) {
+  const ratio = targetKn > 0 ? actualKn / targetKn : 0;
+  const pct = Math.round(ratio * 100);
+  const colour =
+    ratio >= 0.97
+      ? theme.status.success
+      : ratio >= 0.9
+        ? theme.text.primary
+        : theme.status.warning;
+  return (
+    <View
+      paddingVertical={theme.space.sm}
+      paddingHorizontal={theme.space.md}
+      borderRadius={theme.radius.md}
+      borderColor={theme.border}
+      borderWidth={1}
+      backgroundColor={theme.surface}
+      marginBottom={theme.space.sm}
+      flexDirection="row"
+      alignItems="baseline"
+      justifyContent="space-between"
+    >
+      <View>
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.micro.size}
+          fontWeight={theme.type.micro.weight as '600'}
+          letterSpacing={theme.type.micro.letterSpacing}
+        >
+          TARGET (POLAR)
+        </Text>
+        <Text
+          color={theme.text.primary}
+          fontSize={theme.type.h2.size}
+          fontWeight="700"
+          style={{ fontFamily: 'Menlo' }}
+        >
+          {targetKn.toFixed(1)} kn
+        </Text>
+      </View>
+      <View alignItems="flex-end">
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.micro.size}
+          fontWeight={theme.type.micro.weight as '600'}
+          letterSpacing={theme.type.micro.letterSpacing}
+        >
+          ACTUAL · % OF TARGET
+        </Text>
+        <Text
+          color={colour}
+          fontSize={theme.type.h2.size}
+          fontWeight="700"
+          style={{ fontFamily: 'Menlo' }}
+        >
+          {actualKn.toFixed(1)} kn · {pct}%
+        </Text>
+      </View>
+    </View>
+  );
 }

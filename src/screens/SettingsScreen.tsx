@@ -16,6 +16,7 @@ import { Alert, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input, Text, View } from 'tamagui';
 
+import { BUILTIN_POLARS } from '../domain/polars';
 import type { RootStackScreenProps } from '../navigation';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
@@ -41,11 +42,11 @@ const COORD_FORMATS: { key: LatLonFormat; label: string; example: string }[] = [
 ];
 
 export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>) {
-  const nightMode = useSettingsStore((s) => s.nightMode);
+  const themeVariant = useSettingsStore((s) => s.theme);
   const speedUnit = useSettingsStore((s) => s.speedUnit);
   const distanceUnit = useSettingsStore((s) => s.distanceUnit);
   const coordFormat = useSettingsStore((s) => s.coordFormat);
-  const setNightMode = useSettingsStore((s) => s.setNightMode);
+  const setTheme = useSettingsStore((s) => s.setTheme);
   const setSpeedUnit = useSettingsStore((s) => s.setSpeedUnit);
   const setDistanceUnit = useSettingsStore((s) => s.setDistanceUnit);
   const setCoordFormat = useSettingsStore((s) => s.setCoordFormat);
@@ -53,8 +54,12 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
   const setManualTrueWindDegrees = useSettingsStore(
     (s) => s.setManualTrueWindDegrees,
   );
+  const manualTrueWindKn = useSettingsStore((s) => s.manualTrueWindKn);
+  const setManualTrueWindKn = useSettingsStore((s) => s.setManualTrueWindKn);
+  const polarRaw = useSettingsStore((s) => s.polarRaw);
+  const setPolarRaw = useSettingsStore((s) => s.setPolarRaw);
 
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const theme = getTheme(themeVariant);
   const version = (Constants.expoConfig?.version as string | undefined) ?? 'dev';
 
   return (
@@ -92,13 +97,29 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
         </View>
 
         <Section theme={theme} title="Display">
-          <ToggleRow
+          <RadioRow
             theme={theme}
-            label="Night mode"
-            description="Dark background, red night-vision accent."
-            value={nightMode}
-            onChange={setNightMode}
+            label="Theme"
+            options={[
+              { key: 'day', label: 'Day' },
+              { key: 'night', label: 'Night' },
+              { key: 'kindle', label: 'Kindle' },
+            ]}
+            active={themeVariant}
+            onChange={(v) => setTheme(v)}
           />
+          <Text
+            color={theme.text.muted}
+            fontSize={theme.type.caption.size}
+            lineHeight={theme.type.caption.lineHeight}
+            marginTop={theme.space.xs}
+          >
+            {themeVariant === 'day'
+              ? 'Standard daylight UI.'
+              : themeVariant === 'night'
+                ? 'Dark background, dim red accent for cockpit night-vision.'
+                : 'High-contrast black and white for sunlight readability — also the look that ports to e-ink boat displays in the future.'}
+          </Text>
         </Section>
 
         <Section theme={theme} title="Units">
@@ -145,6 +166,16 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
             theme={theme}
             value={manualTrueWindDegrees}
             onChange={setManualTrueWindDegrees}
+          />
+          <WindSpeedRow
+            theme={theme}
+            value={manualTrueWindKn}
+            onChange={setManualTrueWindKn}
+          />
+          <PolarRow
+            theme={theme}
+            value={polarRaw}
+            onChange={setPolarRaw}
           />
         </Section>
 
@@ -227,65 +258,6 @@ function Section({
         {children}
       </View>
     </View>
-  );
-}
-
-function ToggleRow({
-  theme,
-  label,
-  description,
-  value,
-  onChange,
-}: {
-  theme: ReturnType<typeof getTheme>;
-  label: string;
-  description: string;
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <Pressable onPress={() => onChange(!value)} hitSlop={4}>
-      <View
-        flexDirection="row"
-        alignItems="center"
-        justifyContent="space-between"
-        paddingVertical={theme.space.sm}
-      >
-        <View flex={1} paddingRight={theme.space.sm}>
-          <Text
-            color={theme.text.primary}
-            fontSize={theme.type.body.size}
-            fontWeight={theme.type.bodySemi.weight as '600'}
-          >
-            {label}
-          </Text>
-          <Text
-            color={theme.text.muted}
-            fontSize={theme.type.caption.size}
-            lineHeight={theme.type.caption.lineHeight}
-            marginTop={2}
-          >
-            {description}
-          </Text>
-        </View>
-        <View
-          width={48}
-          height={28}
-          borderRadius={theme.radius.full}
-          backgroundColor={value ? theme.accent : theme.border}
-          padding={2}
-          alignItems={value ? 'flex-end' : 'flex-start'}
-          justifyContent="center"
-        >
-          <View
-            width={24}
-            height={24}
-            borderRadius={theme.radius.full}
-            backgroundColor={theme.bg}
-          />
-        </View>
-      </View>
-    </Pressable>
   );
 }
 
@@ -469,6 +441,146 @@ function WindDirectionRow({
         backgroundColor={theme.surface}
         color={theme.text.primary}
         placeholderTextColor={theme.text.muted}
+      />
+    </View>
+  );
+}
+
+function WindSpeedRow({
+  theme,
+  value,
+  onChange,
+}: {
+  theme: ReturnType<typeof getTheme>;
+  value: number | null;
+  onChange: (kn: number | null) => void;
+}) {
+  function commit(text: string) {
+    const trimmed = text.trim();
+    if (trimmed === '') {
+      onChange(null);
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 80) return;
+    onChange(parsed);
+  }
+  return (
+    <View paddingVertical={theme.space.xs}>
+      <Text
+        color={theme.text.primary}
+        fontSize={theme.type.body.size}
+        fontWeight={theme.type.bodySemi.weight as '600'}
+      >
+        True wind speed (kn)
+      </Text>
+      <Text
+        color={theme.text.muted}
+        fontSize={theme.type.caption.size}
+        lineHeight={theme.type.caption.lineHeight}
+        marginTop={2}
+        marginBottom={theme.space.xs}
+      >
+        Drives the polar target-boatspeed lookup. Leave blank to hide the readout.
+      </Text>
+      <Input
+        value={value === null ? '' : String(value)}
+        onChangeText={(t) => commit(t)}
+        placeholder="e.g. 12"
+        keyboardType="numeric"
+        height={44}
+        paddingHorizontal={theme.space.md}
+        fontSize={theme.type.body.size}
+        borderColor={theme.border}
+        backgroundColor={theme.surface}
+        color={theme.text.primary}
+        placeholderTextColor={theme.text.muted}
+      />
+    </View>
+  );
+}
+
+function PolarRow({
+  theme,
+  value,
+  onChange,
+}: {
+  theme: ReturnType<typeof getTheme>;
+  value: string | null;
+  onChange: (raw: string | null) => void;
+}) {
+  return (
+    <View paddingVertical={theme.space.xs}>
+      <Text
+        color={theme.text.primary}
+        fontSize={theme.type.body.size}
+        fontWeight={theme.type.bodySemi.weight as '600'}
+      >
+        Polar table
+      </Text>
+      <Text
+        color={theme.text.muted}
+        fontSize={theme.type.caption.size}
+        lineHeight={theme.type.caption.lineHeight}
+        marginTop={2}
+        marginBottom={theme.space.xs}
+      >
+        Paste an ORC-style polar table (header row of TWS bins, then rows of TWA + speeds).
+        Drives the target-boatspeed strip on the race timer.
+      </Text>
+      <View flexDirection="row" marginBottom={theme.space.xs} flexWrap="wrap">
+        {BUILTIN_POLARS.map((p) => (
+          <Pressable
+            key={p.id}
+            onPress={() => onChange(p.raw)}
+            hitSlop={4}
+          >
+            <View
+              paddingVertical={theme.space.xs}
+              paddingHorizontal={theme.space.sm}
+              borderRadius={theme.radius.full}
+              borderColor={theme.border}
+              borderWidth={1}
+              marginRight={theme.space.xs}
+              marginBottom={theme.space.xs}
+            >
+              <Text color={theme.text.secondary} fontSize={theme.type.caption.size}>
+                {p.name}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
+        {value ? (
+          <Pressable onPress={() => onChange(null)} hitSlop={4}>
+            <View
+              paddingVertical={theme.space.xs}
+              paddingHorizontal={theme.space.sm}
+              borderRadius={theme.radius.full}
+              backgroundColor={theme.status.danger}
+              marginBottom={theme.space.xs}
+            >
+              <Text color={theme.bg} fontSize={theme.type.caption.size} fontWeight="700">
+                Clear
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
+      </View>
+      <Input
+        value={value ?? ''}
+        onChangeText={(t) => onChange(t.length > 0 ? t : null)}
+        placeholder="twa/tws  6  8  10  12 …"
+        multiline
+        minHeight={120}
+        paddingHorizontal={theme.space.md}
+        paddingVertical={theme.space.sm}
+        fontSize={theme.type.caption.size}
+        borderColor={theme.border}
+        backgroundColor={theme.surface}
+        color={theme.text.primary}
+        placeholderTextColor={theme.text.muted}
+        textAlignVertical="top"
+        autoCapitalize="none"
       />
     </View>
   );

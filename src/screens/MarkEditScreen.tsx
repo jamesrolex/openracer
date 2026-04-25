@@ -67,8 +67,8 @@ export function MarkEditScreen({ navigation, route }: RootStackScreenProps<'Mark
   const markId = route.params?.markId;
   const editing = Boolean(markId);
 
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
 
   const create = useMarksStore((s) => s.create);
   const update = useMarksStore((s) => s.update);

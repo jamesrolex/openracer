@@ -105,7 +105,7 @@ interface Props {
   items: ChecklistItem[];
   onArm: () => void;
   onCancel: () => void;
-  variant: 'day' | 'night';
+  variant: 'day' | 'night' | 'kindle';
 }
 
 export function PreRaceChecklist({ items, onArm, onCancel, variant }: Props) {

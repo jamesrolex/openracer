@@ -27,7 +27,7 @@ export interface StartLineReadoutProps {
   cog: number | null;
   sog: number | null;
   urgent?: boolean;
-  variant?: 'day' | 'night';
+  variant?: 'day' | 'night' | 'kindle';
 }
 
 export function StartLineReadout({

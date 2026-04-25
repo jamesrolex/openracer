@@ -28,8 +28,8 @@ export function RaceSessionScreen({
   navigation,
   route,
 }: RootStackScreenProps<'RaceSession'>) {
-  const nightMode = useSettingsStore((s) => s.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((s) => s.theme);
+  const theme = getTheme(themeVariant);
 
   const [session, setSession] = useState<RaceSession | null>(null);
   const [points, setPoints] = useState<TrackPoint[]>([]);

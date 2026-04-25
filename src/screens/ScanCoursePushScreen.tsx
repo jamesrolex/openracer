@@ -36,8 +36,8 @@ type Status =
 export function ScanCoursePushScreen({
   navigation,
 }: RootStackScreenProps<'ScanCoursePush'>) {
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
 
   const [permission, requestPermission] = useCameraPermissions();
   const [status, setStatus] = useState<Status>({ kind: 'scanning' });

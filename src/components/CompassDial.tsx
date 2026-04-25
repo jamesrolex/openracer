@@ -22,7 +22,7 @@ interface Props {
   needsCalibration?: boolean;
   /** Pixel size of the dial (square). Default 240. */
   size?: number;
-  variant: 'day' | 'night';
+  variant: 'day' | 'night' | 'kindle';
 }
 
 export function CompassDial({

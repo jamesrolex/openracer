@@ -33,8 +33,8 @@ const UNITS: { key: DistanceUnit; label: string; toMetres: (v: number) => number
 
 export function MarkBearingScreen({ navigation, route }: RootStackScreenProps<'MarkBearing'>) {
   const legId = route.params.legId;
-  const nightMode = useSettingsStore((s) => s.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
+  const themeVariant = useSettingsStore((s) => s.theme);
+  const theme = getTheme(themeVariant);
 
   const marks = useMarksStore((s) => s.marks);
   const createMark = useMarksStore((s) => s.create);

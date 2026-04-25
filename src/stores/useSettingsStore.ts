@@ -23,6 +23,14 @@ export interface SettingsState {
   coordFormat: LatLonFormat;
   /** Manual toggle. Phase 0 has no auto-enable at sunset — that comes later. */
   nightMode: boolean;
+  /** Display theme. 'kindle' is the high-contrast B/W variant designed
+   *  for sunlight readability + e-ink portability. Takes precedence over
+   *  `nightMode` when set to 'night' or 'kindle'. */
+  theme: 'day' | 'night' | 'kindle';
+  /** Helm Display Mode — strips controls on the race timer to a
+   *  glance-only kiosk view. Survives app restart. Toggle on
+   *  RaceTimerScreen via tap-and-hold gesture. */
+  helmDisplayMode: boolean;
   /** Locale for user-facing copy. Only en-GB is populated for Phase 0. */
   language: 'en-GB';
   /** First-launch onboarding gate — false until the sailor taps "Get started". */
@@ -31,6 +39,12 @@ export interface SettingsState {
    *  instruments enter this once before a start; it powers the favoured-end
    *  chip on the start-line readout. Null = unknown, chip is hidden. */
   manualTrueWindDegrees: number | null;
+  /** Manual true-wind speed in knots. Null = unknown. Powers the polar
+   *  target-boatspeed lookup. */
+  manualTrueWindKn: number | null;
+  /** Raw polar table text (ORC-style grid). Null = no polar set; target-
+   *  boatspeed readout hidden. */
+  polarRaw: string | null;
 }
 
 export interface SettingsActions {
@@ -38,8 +52,12 @@ export interface SettingsActions {
   setDistanceUnit: (unit: DistanceUnit) => void;
   setCoordFormat: (format: LatLonFormat) => void;
   setNightMode: (on: boolean) => void;
+  setTheme: (theme: 'day' | 'night' | 'kindle') => void;
+  setHelmDisplayMode: (on: boolean) => void;
   completeOnboarding: () => void;
   setManualTrueWindDegrees: (deg: number | null) => void;
+  setManualTrueWindKn: (kn: number | null) => void;
+  setPolarRaw: (raw: string | null) => void;
 }
 
 const defaults: SettingsState = {
@@ -47,9 +65,13 @@ const defaults: SettingsState = {
   distanceUnit: 'nm',
   coordFormat: 'dmm',
   nightMode: false,
+  theme: 'day',
+  helmDisplayMode: false,
   language: 'en-GB',
   onboardingCompleted: false,
   manualTrueWindDegrees: null,
+  manualTrueWindKn: null,
+  polarRaw: null,
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -59,10 +81,19 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setSpeedUnit: (speedUnit) => set({ speedUnit }),
       setDistanceUnit: (distanceUnit) => set({ distanceUnit }),
       setCoordFormat: (coordFormat) => set({ coordFormat }),
-      setNightMode: (nightMode) => set({ nightMode }),
+      setNightMode: (nightMode) =>
+        // Keep `theme` in sync with the legacy boolean so existing call-
+        // sites that read `nightMode` continue to work. Selecting day or
+        // night via the theme picker also updates this flag.
+        set({ nightMode, theme: nightMode ? 'night' : 'day' }),
+      setTheme: (theme) =>
+        set({ theme, nightMode: theme === 'night' }),
+      setHelmDisplayMode: (helmDisplayMode) => set({ helmDisplayMode }),
       completeOnboarding: () => set({ onboardingCompleted: true }),
       setManualTrueWindDegrees: (manualTrueWindDegrees) =>
         set({ manualTrueWindDegrees }),
+      setManualTrueWindKn: (manualTrueWindKn) => set({ manualTrueWindKn }),
+      setPolarRaw: (polarRaw) => set({ polarRaw }),
     }),
     {
       name: 'openracer.settings',
@@ -72,9 +103,13 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         distanceUnit: state.distanceUnit,
         coordFormat: state.coordFormat,
         nightMode: state.nightMode,
+        theme: state.theme,
+        helmDisplayMode: state.helmDisplayMode,
         language: state.language,
         onboardingCompleted: state.onboardingCompleted,
         manualTrueWindDegrees: state.manualTrueWindDegrees,
+        manualTrueWindKn: state.manualTrueWindKn,
+        polarRaw: state.polarRaw,
       }),
     },
   ),

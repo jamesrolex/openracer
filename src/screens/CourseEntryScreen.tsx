@@ -43,9 +43,9 @@ import type { CourseTemplateId, Leg, StartType } from '../types/course';
 import type { Mark, MarkInput } from '../types/mark';
 
 export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEntry'>) {
-  const nightMode = useSettingsStore((state) => state.nightMode);
-  const theme = getTheme(nightMode ? 'night' : 'day');
-  const variant = nightMode ? 'night' : 'day';
+  const themeVariant = useSettingsStore((state) => state.theme);
+  const theme = getTheme(themeVariant);
+  const variant = themeVariant;
 
   const position = useBoatStore((s) => s.position);
   const lastUpdate = useBoatStore((s) => s.lastUpdate);
