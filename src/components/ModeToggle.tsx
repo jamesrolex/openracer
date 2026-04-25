@@ -1,11 +1,12 @@
 /**
- * Race / Cruise toggle. Top-right of the main screen.
+ * Race / Cruise / Nav toggle. Top-right of the main screen.
  *
- * Both modes are first-class — never style one as "default" and the other
+ * Every mode is first-class — never style one as "default" and the others
  * as "other". See skills/design-system/SKILL.md "ModeToggle".
  *
- * Phase 0 is a placeholder: the onChange fires but nothing yet listens to
- * the mode switch. Real behaviour lands with the race timer in Phase 1.
+ * - Race: course entry, race timer, start-line readouts (Phase 1)
+ * - Cruise: odometer + dashboards (Phase 1.7-1.8)
+ * - Nav: waypoint navigation + cruise-track logging (Phase 1.16)
  */
 
 import { Pressable } from 'react-native';
@@ -36,14 +37,16 @@ export function ModeToggle({ mode, onChange, variant = 'day' }: ModeToggleProps)
       accessibilityRole="tablist"
       accessibilityLabel="App mode"
     >
-      {(['race', 'cruise'] as const).map((candidate) => {
+      {(['race', 'cruise', 'nav'] as const).map((candidate) => {
         const active = candidate === mode;
+        const label =
+          candidate === 'race' ? 'Race' : candidate === 'cruise' ? 'Cruise' : 'Nav';
         return (
           <Pressable
             key={candidate}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            accessibilityLabel={candidate === 'race' ? 'Race mode' : 'Cruise mode'}
+            accessibilityLabel={`${label} mode`}
             onPress={() => {
               if (!active) onChange(candidate);
             }}
@@ -60,7 +63,7 @@ export function ModeToggle({ mode, onChange, variant = 'day' }: ModeToggleProps)
                 fontWeight={theme.type.bodySemi.weight as '600'}
                 lineHeight={theme.type.bodySemi.lineHeight}
               >
-                {candidate === 'race' ? 'Race' : 'Cruise'}
+                {label}
               </Text>
             </View>
           </Pressable>

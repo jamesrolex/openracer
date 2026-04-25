@@ -225,6 +225,13 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
               variant="primary"
               theme={theme}
             />
+          ) : mode === 'nav' ? (
+            <HomeButton
+              label="Open Nav"
+              onPress={() => navigation.navigate('NavMode')}
+              variant="primary"
+              theme={theme}
+            />
           ) : (
             <HomeButton
               label="Marks"
@@ -237,21 +244,23 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
 
         {!sequenceStartTime ? (
           <>
-            <Pressable
-              onPress={() => navigation.navigate('CruiseDisplay')}
-              accessibilityLabel="Cruise display"
-              hitSlop={8}
-            >
-              <Text
-                color={theme.accent}
-                fontSize={theme.type.caption.size}
-                fontWeight={theme.type.bodySemi.weight as '600'}
-                textAlign="center"
-                marginTop={theme.space.sm}
+            {mode !== 'nav' ? (
+              <Pressable
+                onPress={() => navigation.navigate('CruiseDisplay')}
+                accessibilityLabel="Cruise display"
+                hitSlop={8}
               >
-                ◐ Cruise display — wind / VMG / big numbers
-              </Text>
-            </Pressable>
+                <Text
+                  color={theme.accent}
+                  fontSize={theme.type.caption.size}
+                  fontWeight={theme.type.bodySemi.weight as '600'}
+                  textAlign="center"
+                  marginTop={theme.space.sm}
+                >
+                  ◐ Cruise display — wind / VMG / big numbers
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
               onPress={() => navigation.navigate('ScanCoursePush')}
               accessibilityLabel="Scan QR"

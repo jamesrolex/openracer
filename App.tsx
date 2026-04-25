@@ -7,6 +7,7 @@ import { TamaguiProvider } from 'tamagui';
 
 import { DevPanel } from './src/components/DevPanel';
 import { installForegroundHandler } from './src/domain/raceNotifications';
+import { useCruiseTrackLogger } from './src/hooks/useCruiseTrackLogger';
 import { useLiveTelemetry } from './src/hooks/useLiveTelemetry';
 import { useRaceTrackLogger } from './src/hooks/useRaceTrackLogger';
 import { useTripLogger } from './src/hooks/useTripLogger';
@@ -26,6 +27,7 @@ export default function App() {
   useLiveTelemetry();
   useRaceTrackLogger();
   useTripLogger();
+  useCruiseTrackLogger();
 
   useEffect(() => {
     installForegroundHandler();

@@ -16,6 +16,7 @@ import { CourseEntryScreen } from '../screens/CourseEntryScreen';
 import { CourseLibraryScreen } from '../screens/CourseLibraryScreen';
 import { CruiseDisplayScreen } from '../screens/CruiseDisplayScreen';
 import { LeaderboardScreen } from '../screens/LeaderboardScreen';
+import { NavModeScreen } from '../screens/NavModeScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MarkBearingScreen } from '../screens/MarkBearingScreen';
 import { MarkEditScreen } from '../screens/MarkEditScreen';
@@ -55,6 +56,7 @@ export type RootStackParamList = {
   TrustedCommittees: undefined;
   RaceTimer: undefined;
   CruiseDisplay: undefined;
+  NavMode: undefined;
   RaceSessions: undefined;
   RaceSession: { sessionId: string };
   Settings: undefined;
@@ -94,6 +96,7 @@ export function RootNavigator() {
       <Stack.Screen name="TrustedCommittees" component={TrustedCommitteesScreen} />
       <Stack.Screen name="RaceTimer" component={RaceTimerScreen} />
       <Stack.Screen name="CruiseDisplay" component={CruiseDisplayScreen} />
+      <Stack.Screen name="NavMode" component={NavModeScreen} />
       <Stack.Screen name="RaceSessions" component={RaceSessionsScreen} />
       <Stack.Screen name="RaceSession" component={RaceSessionScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />

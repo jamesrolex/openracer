@@ -156,6 +156,52 @@ const m0006_race_track_points: Migration = async (db) => {
   `);
 };
 
+/** v11 — nav-mode tables. Phase 1.16.
+ *  - waypoints: nav-mode destinations (distinct from racing marks).
+ *  - cruise_tracks + cruise_track_points: GPS log started via "Start
+ *    track" in nav mode. Independent from race_track_points so a cruise
+ *    log isn't tied to a race session. */
+const m0011_nav: Migration = async (db) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS waypoints (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_waypoints_created
+      ON waypoints (created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS cruise_tracks (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      ended_at TEXT,
+      distance_metres REAL NOT NULL DEFAULT 0,
+      max_sog_mps REAL,
+      point_count INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_cruise_tracks_started
+      ON cruise_tracks (started_at DESC);
+
+    CREATE TABLE IF NOT EXISTS cruise_track_points (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      track_id TEXT NOT NULL REFERENCES cruise_tracks(id) ON DELETE CASCADE,
+      recorded_at TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      sog_mps REAL,
+      cog_deg REAL,
+      heading_deg REAL,
+      accuracy_m REAL
+    );
+    CREATE INDEX IF NOT EXISTS idx_cruise_track_points_track
+      ON cruise_track_points (track_id, recorded_at);
+  `);
+};
+
 /** v10 — leaderboard_entries. Stores received finish records keyed by
  *  (raceName + gunAt + senderId) so the same boat sharing twice doesn't
  *  duplicate. Phase 1.15. */
@@ -190,4 +236,5 @@ export const migrations: Migration[] = [
   m0008_marks_colour_hint,
   m0009_joined_boats,
   m0010_leaderboard,
+  m0011_nav,
 ];
