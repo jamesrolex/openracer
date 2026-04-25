@@ -220,7 +220,7 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
         <View flexDirection="row" marginTop={theme.space.sm}>
           {sequenceStartTime ? (
             <HomeButton
-              label="Timer"
+              label="Open timer"
               onPress={() => navigation.navigate('RaceTimer')}
               variant="primary"
               theme={theme}
@@ -233,22 +233,6 @@ export function HomeScreen({ navigation }: RootStackScreenProps<'Home'>) {
               theme={theme}
             />
           )}
-          <HomeButton
-            label="Scan QR"
-            onPress={() => navigation.navigate('ScanCoursePush')}
-            variant="outline"
-            theme={theme}
-          />
-          <HomeButton
-            label={sequenceStartTime ? 'Marks' : 'Committee'}
-            onPress={() =>
-              sequenceStartTime
-                ? navigation.navigate('MarkLibrary')
-                : navigation.navigate('CommitteeIdentity')
-            }
-            variant="outline"
-            theme={theme}
-          />
         </View>
 
         {permissionStatus === 'denied' ? (
