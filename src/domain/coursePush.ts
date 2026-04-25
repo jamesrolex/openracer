@@ -101,6 +101,7 @@ export function buildBundle(input: BuildBundleInput): CoursePushBundle {
     marks: bundleMarks,
     legs,
     ...(input.scheduledStartAt ? { scheduledStartAt: input.scheduledStartAt } : {}),
+    ...(course.startType !== 'standard-line' ? { startType: course.startType } : {}),
   };
 
   const canonical = canonicalJson(payload);

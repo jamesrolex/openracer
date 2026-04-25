@@ -57,6 +57,50 @@ export function StartLineReadout({
     );
   }, [cb, pin, manualTrueWindDegrees]);
 
+  // Rabbit + gate starts have a moving line — none of the spatial readouts
+  // (distance-to-line, time-to-line, line bias) apply. We surface a small
+  // explainer card so sailors aren't surprised by a missing panel during
+  // the countdown. Phase 4.5 (BLE peer-sync) will replace this with a
+  // real readout once the rabbit broadcasts its GPS.
+  if (course && course.startType !== 'standard-line') {
+    return (
+      <View
+        paddingVertical={theme.space.sm}
+        paddingHorizontal={theme.space.md}
+        borderRadius={theme.radius.lg}
+        borderWidth={1}
+        borderColor={theme.border}
+        backgroundColor={theme.surface}
+      >
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.micro.size}
+          fontWeight={theme.type.micro.weight as '600'}
+          letterSpacing={theme.type.micro.letterSpacing}
+        >
+          {course.startType === 'rabbit' ? 'RABBIT START' : 'GATE START'}
+        </Text>
+        <Text
+          color={theme.text.primary}
+          fontSize={theme.type.body.size}
+          fontWeight={theme.type.bodySemi.weight as '600'}
+          marginTop={theme.space.xxs}
+        >
+          Eyes on the rabbit — line is moving.
+        </Text>
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.caption.size}
+          lineHeight={theme.type.caption.lineHeight}
+          marginTop={theme.space.xxs}
+        >
+          Spatial readouts (distance to line, OCS) need the rabbit&apos;s
+          live GPS. Coming when boats can sync over BLE.
+        </Text>
+      </View>
+    );
+  }
+
   if (!cb || !pin || !position) return null;
 
   const state = computeBoatStartState(

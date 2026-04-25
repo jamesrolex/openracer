@@ -11,7 +11,7 @@
  * courses. Overridable per-leg in the future; not exposed in UI yet.
  */
 
-import type { CourseTemplate, CourseTemplateId, Leg } from '../types/course';
+import type { CourseTemplate, CourseTemplateId, Leg, StartType } from '../types/course';
 
 function legId(): string {
   return `leg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -114,6 +114,39 @@ export function appendRoundingLeg(legs: Leg[], label: string): Leg[] {
 export function isCourseReadyToArm(legs: Leg[]): boolean {
   if (legs.length === 0) return false;
   return legs.every((l) => l.markIds.length >= l.requiredMarks);
+}
+
+/**
+ * Reshape the start-leg slot count + label when the user toggles between
+ * a standard line (CB + pin, two marks) and a rabbit/gate start (one
+ * fixed mark + a moving rabbit). Existing rounding/finish legs are
+ * untouched. Trims `markIds` if the new shape requires fewer marks so
+ * the leg never claims more marks than it can validate.
+ */
+export function mutateStartLegForStartType(
+  legs: Leg[],
+  startType: StartType,
+): Leg[] {
+  return legs.map((leg) => {
+    if (leg.type !== 'start') return leg;
+    if (startType === 'standard-line') {
+      return {
+        ...leg,
+        label: 'Start line',
+        requiredMarks: 2,
+      };
+    }
+    const label =
+      startType === 'rabbit' ? 'Pin / port end (rabbit)' : 'Guard boat (gate)';
+    return {
+      ...leg,
+      label,
+      requiredMarks: 1,
+      // The rabbit's stern is the other end and isn't a stored mark; if a
+      // stale CB+pin pair is on this leg, keep the first one (pin).
+      markIds: leg.markIds.slice(0, 1),
+    };
+  });
 }
 
 /** Count of legs still missing required marks. */

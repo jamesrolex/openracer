@@ -99,6 +99,16 @@ const m0005_committee_trust: Migration = async (db) => {
   `);
 };
 
+/** v7 — courses.start_type. Distinguish standard line vs rabbit vs gate
+ *  starts. Defaults to 'standard-line' for any rows that pre-date this
+ *  migration so existing courses keep their current behaviour. */
+const m0007_courses_start_type: Migration = async (db) => {
+  await db.execAsync(`
+    ALTER TABLE courses
+      ADD COLUMN start_type TEXT NOT NULL DEFAULT 'standard-line';
+  `);
+};
+
 /** v6 — race_track_points. 1Hz GPS samples during active race sessions. */
 const m0006_race_track_points: Migration = async (db) => {
   await db.execAsync(`
@@ -125,4 +135,5 @@ export const migrations: Migration[] = [
   m0004_race_sessions,
   m0005_committee_trust,
   m0006_race_track_points,
+  m0007_courses_start_type,
 ];

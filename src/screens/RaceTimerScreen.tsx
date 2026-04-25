@@ -15,6 +15,7 @@ import { Text, View } from 'tamagui';
 
 import { CourseProgressReadout } from '../components/CourseProgressReadout';
 import { GunSyncButton } from '../components/GunSyncButton';
+import { RabbitStartPanel } from '../components/RabbitStartPanel';
 import { computeCourseDistance } from '../domain/courseDistance';
 import {
   cancelAllRaceNotifications,
@@ -46,10 +47,12 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const previousGunCapturedAt = useRaceStore((s) => s.previousGunCapturedAt);
   const postponedAt = useRaceStore((s) => s.postponedAt);
   const individualRecallAt = useRaceStore((s) => s.individualRecallAt);
+  const rabbitLaunchAt = useRaceStore((s) => s.rabbitLaunchAt);
   const raiseAp = useRaceStore((s) => s.raiseAp);
   const dropAp = useRaceStore((s) => s.dropAp);
   const raiseIndividualRecall = useRaceStore((s) => s.raiseIndividualRecall);
   const clearIndividualRecall = useRaceStore((s) => s.clearIndividualRecall);
+  const setRabbitLaunchAt = useRaceStore((s) => s.setRabbitLaunchAt);
   const abandon = useRaceStore((s) => s.abandon);
   const finish = useRaceStore((s) => s.finish);
   const setActiveSessionState = useRaceStore((s) => s.setActiveSessionState);
@@ -317,7 +320,7 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
                   marginTop={theme.space.xxs}
                   opacity={0.9}
                 >
-                  Countdown frozen. Tap "Drop AP" when ready to restart.
+                  Countdown frozen. Tap &ldquo;Drop AP&rdquo; when ready to restart.
                 </Text>
               </View>
             ) : null}
@@ -343,6 +346,18 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
                   4-min OCS-clear window. Auto-clears.
                 </Text>
               </View>
+            ) : null}
+
+            {draft &&
+            draft.startType !== 'standard-line' &&
+            snapshot.state !== 'postponed' ? (
+              <RabbitStartPanel
+                startType={draft.startType}
+                sequenceStartTime={sequenceStartTime}
+                rabbitLaunchAt={rabbitLaunchAt}
+                onLaunch={() => setRabbitLaunchAt(new Date())}
+                variant={variant}
+              />
             ) : null}
 
             {snapshot.state !== 'postponed' ? (

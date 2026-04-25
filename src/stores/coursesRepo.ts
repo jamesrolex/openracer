@@ -22,6 +22,7 @@ interface CourseRow {
   name: string;
   template_id: string;
   state: string;
+  start_type: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +79,7 @@ async function loadCourseFromRow(row: CourseRow): Promise<Course> {
     templateId: row.template_id as CourseTemplateId,
     legs,
     state: row.state as CourseState,
+    startType: (row.start_type as Course['startType']) ?? 'standard-line',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -115,15 +117,17 @@ export async function createCourse(input: CourseInput, now: Date = new Date()): 
   const id = newId('course');
   const nowIso: IsoTimestamp = now.toISOString();
   const state: CourseState = input.state ?? 'draft';
+  const startType = input.startType ?? 'standard-line';
 
   await db.withTransactionAsync(async () => {
     await db.runAsync(
-      `INSERT INTO courses (id, name, template_id, state, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?);`,
+      `INSERT INTO courses (id, name, template_id, state, start_type, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?);`,
       id,
       input.name,
       input.templateId,
       state,
+      startType,
       nowIso,
       nowIso,
     );
@@ -162,6 +166,7 @@ export async function updateCourse(
     name?: string;
     templateId?: CourseTemplateId;
     state?: CourseState;
+    startType?: Course['startType'];
     legs?: Leg[];
   },
   now: Date = new Date(),
@@ -175,16 +180,18 @@ export async function updateCourse(
     name: patch.name ?? existing.name,
     templateId: patch.templateId ?? existing.templateId,
     state: patch.state ?? existing.state,
+    startType: patch.startType ?? existing.startType,
     legs: patch.legs ?? existing.legs,
     updatedAt: now.toISOString(),
   };
 
   await db.withTransactionAsync(async () => {
     await db.runAsync(
-      `UPDATE courses SET name = ?, template_id = ?, state = ?, updated_at = ? WHERE id = ?;`,
+      `UPDATE courses SET name = ?, template_id = ?, state = ?, start_type = ?, updated_at = ? WHERE id = ?;`,
       next.name,
       next.templateId,
       next.state,
+      next.startType,
       next.updatedAt,
       id,
     );

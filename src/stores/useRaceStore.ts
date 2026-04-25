@@ -56,6 +56,11 @@ export interface RaceStoreState {
    *  The snapshot reports state = 'individual-recall' for ~4 min per
    *  Rule 29.1. Cleared by `clearIndividualRecall()` or auto on a fresh arm. */
   individualRecallAt: string | null;
+  /** Rabbit start only — ISO 8601 UTC for when the rabbit boat is
+   *  expected to launch. Drives a sub-countdown on the race timer.
+   *  Null when armed without a rabbit launch time, or when the
+   *  course is not a rabbit start. */
+  rabbitLaunchAt: string | null;
 }
 
 export interface RaceActions {
@@ -89,6 +94,8 @@ export interface RaceActions {
   raiseIndividualRecall: () => void;
   /** Clear the X flag manually (RC has visible OCS-clear before the window). */
   clearIndividualRecall: () => void;
+  /** Set or clear the rabbit-launch time on the active arming. */
+  setRabbitLaunchAt: (at: Date | null) => void;
 }
 
 /** How long (ms) the "Undo last gun sync" affordance stays available. */
@@ -107,6 +114,7 @@ const initial: RaceStoreState = {
   previousGunCapturedAt: null,
   postponedAt: null,
   individualRecallAt: null,
+  rabbitLaunchAt: null,
 };
 
 // Haversine great-circle distance, inlined here to avoid pulling a
@@ -149,6 +157,7 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
           lastTrackLongitude: null,
           postponedAt: null,
           individualRecallAt: null,
+          rabbitLaunchAt: null,
         });
         return session.id;
       },
@@ -222,6 +231,10 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
         set({ individualRecallAt: null });
       },
 
+      setRabbitLaunchAt: (at) => {
+        set({ rabbitLaunchAt: at ? at.toISOString() : null });
+      },
+
       abandon: async () => {
         const id = get().activeSessionId;
         if (id) await updateRaceSessionState(id, 'abandoned', new Date());
@@ -282,6 +295,7 @@ export const useRaceStore = create<RaceStoreState & RaceActions>()(
         previousGunCapturedAt: state.previousGunCapturedAt,
         postponedAt: state.postponedAt,
         individualRecallAt: state.individualRecallAt,
+        rabbitLaunchAt: state.rabbitLaunchAt,
       }),
     },
   ),

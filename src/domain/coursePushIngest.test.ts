@@ -26,6 +26,7 @@ function makeBundle() {
       id: 'remote-course-1',
       name: 'Committee W-L',
       templateId: 'windward-leeward',
+    startType: 'standard-line' as const,
       state: 'armed',
       createdAt: NOW.toISOString(),
       updatedAt: NOW.toISOString(),

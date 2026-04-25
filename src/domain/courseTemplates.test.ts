@@ -3,6 +3,7 @@ import {
   appendRoundingLeg,
   getTemplate,
   isCourseReadyToArm,
+  mutateStartLegForStartType,
   remainingLegsToFill,
 } from './courseTemplates';
 
@@ -81,5 +82,50 @@ describe('appendRoundingLeg', () => {
     const legs = [getTemplate('windward-leeward').buildLegs()[0]!]; // just start
     const out = appendRoundingLeg(legs, 'Solo');
     expect(out.map((l) => l.type)).toEqual(['start', 'windward']);
+  });
+});
+
+describe('mutateStartLegForStartType', () => {
+  it('keeps standard-line as 2-mark "Start line"', () => {
+    const legs = getTemplate('windward-leeward').buildLegs();
+    const out = mutateStartLegForStartType(legs, 'standard-line');
+    const start = out.find((l) => l.type === 'start')!;
+    expect(start.requiredMarks).toBe(2);
+    expect(start.label).toBe('Start line');
+  });
+
+  it('rabbit-shapes the start leg to 1 mark + new label', () => {
+    const legs = getTemplate('windward-leeward').buildLegs();
+    const out = mutateStartLegForStartType(legs, 'rabbit');
+    const start = out.find((l) => l.type === 'start')!;
+    expect(start.requiredMarks).toBe(1);
+    expect(start.label).toContain('Pin');
+  });
+
+  it('gate-shapes the start leg to 1 mark with guard-boat label', () => {
+    const legs = getTemplate('triangle').buildLegs();
+    const out = mutateStartLegForStartType(legs, 'gate');
+    const start = out.find((l) => l.type === 'start')!;
+    expect(start.requiredMarks).toBe(1);
+    expect(start.label).toContain('Guard');
+  });
+
+  it('trims a stale CB+pin pair to one mark on rabbit toggle', () => {
+    const legs = getTemplate('windward-leeward').buildLegs();
+    const withMarks = legs.map((l) =>
+      l.type === 'start' ? { ...l, markIds: ['cb', 'pin'] } : l,
+    );
+    const out = mutateStartLegForStartType(withMarks, 'rabbit');
+    const start = out.find((l) => l.type === 'start')!;
+    expect(start.markIds).toEqual(['cb']);
+  });
+
+  it('does not touch non-start legs', () => {
+    const legs = getTemplate('olympic').buildLegs();
+    const out = mutateStartLegForStartType(legs, 'rabbit');
+    // Compare indices 1+ (skip start). Same length, same labels.
+    expect(out.slice(1).map((l) => ({ type: l.type, label: l.label }))).toEqual(
+      legs.slice(1).map((l) => ({ type: l.type, label: l.label })),
+    );
   });
 });

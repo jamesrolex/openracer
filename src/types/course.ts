@@ -56,17 +56,40 @@ export interface CourseTemplate {
 /** Lifecycle of a course from first edit to raced-and-archived. */
 export type CourseState = 'draft' | 'armed' | 'racing' | 'completed' | 'archived';
 
+/**
+ * What kind of start sequence this course uses. Drives both the start-leg
+ * UI (slot labels + count) and the race-timer behaviour (a rabbit start
+ * adds a sub-countdown for the rabbit launch; spatial start-line
+ * readouts hide because the line is moving).
+ *
+ * - `standard-line` — committee boat + pin, fixed line. The default.
+ *   2 marks: starboard end (CB) + port end (pin).
+ * - `rabbit` — moving start. The rabbit boat sails on port across
+ *   the line; everyone else starts behind its stern. 1 fixed mark
+ *   (the pin or guard boat) plus a launch position for the rabbit.
+ * - `gate` — variant of rabbit with a guard boat at the windward end
+ *   of the moving line. Same data shape as `rabbit` for now.
+ */
+export type StartType = 'standard-line' | 'rabbit' | 'gate';
+
 export interface Course {
   id: string;
   name: string;
   templateId: CourseTemplateId;
   legs: Leg[];
   state: CourseState;
+  /** Defaults to `'standard-line'` for any course written before the
+   *  v7 migration; new courses pick this up from the chosen template. */
+  startType: StartType;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
 }
 
 /** Fields supplied when creating a new course. */
-export type CourseInput = Omit<Course, 'id' | 'createdAt' | 'updatedAt' | 'state'> & {
+export type CourseInput = Omit<
+  Course,
+  'id' | 'createdAt' | 'updatedAt' | 'state' | 'startType'
+> & {
   state?: CourseState;
+  startType?: StartType;
 };

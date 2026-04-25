@@ -32,6 +32,7 @@ export interface CoursesActions {
     name?: string;
     legs?: Leg[];
     state?: CourseState;
+    startType?: Course['startType'];
   }) => Promise<Course>;
   setLegMarks: (legId: string, markIds: string[]) => Promise<Course>;
   setLegRounding: (legId: string, rounding: Leg['rounding']) => Promise<Course>;
@@ -78,6 +79,7 @@ export const useCoursesStore = create<CoursesState & CoursesActions>((set, get) 
         templateId: input.templateId,
         legs: input.legs,
         state: 'draft',
+        startType: input.startType,
       });
       set({ activeDraft: updated });
       await get().refresh();

@@ -74,6 +74,9 @@ export interface CoursePushPayload {
   legs: CoursePushLeg[];
   /** Optional — ISO 8601 start time if the committee has scheduled it. */
   scheduledStartAt?: string;
+  /** Optional — start type. Older bundles omit; receivers default
+   *  to `'standard-line'`. Additive; same schemaVersion. */
+  startType?: 'standard-line' | 'rabbit' | 'gate';
 }
 
 /** A signed bundle as transmitted over mDNS / BLE and pasted via QR. */

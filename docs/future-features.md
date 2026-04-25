@@ -6,6 +6,53 @@ When one of these graduates to a real phase, move the content into the relevant 
 
 ---
 
+## Rabbit start — Option C (live rabbit broadcast)
+
+Phase 1.5.1 shipped Option A (the honour-system version): we know the
+course is a rabbit start, we hide the spatial start-line readout, and
+we capture "rabbit launched!" as a manual tap. No spatial guidance.
+
+Option C is the right answer: the boat designated as the rabbit runs
+OpenRacer in a **rabbit role** that broadcasts its GPS at 1 Hz over
+the same BLE peer-sync layer that powers multi-crew yacht-data sync
+(see next entry). Receiving competitors' apps recompute the start
+line live as `pin → rabbitStern(now)` — real distance-to-line, real
+"behind the rabbit's stern" detection, real OCS.
+
+**Dependencies.**
+
+- BLE peer-sync infrastructure (Phase 4.5).
+- A new role on top of the yacht-session model: `rabbit` is a
+  one-of-N boat in the local race who broadcasts to everyone.
+- Trust model: any boat already in a yacht session can see the
+  rabbit's broadcast. Cross-yacht broadcasts use the same signed-
+  bundle codec as committee-push.
+
+**UX shape.**
+
+- Course owner picks a boat as the rabbit before the start (probably
+  by scanning that boat's QR identity, like committee-trust pairing).
+- The rabbit's RaceTimerScreen has a special "I am the rabbit" mode
+  badge + a high-power broadcast indicator.
+- Every other boat sees the same rabbit position on a chart (Phase 2)
+  with its computed start-line line.
+
+**Acceptance criteria (draft).**
+
+- [ ] Two boats, one in `rabbit` role and one in `competitor` role,
+      both running OpenRacer. Competitor sees the rabbit's GPS within
+      2 s of the rabbit moving.
+- [ ] Distance-to-line readout updates in real time as the rabbit
+      moves.
+- [ ] OCS detection fires when the competitor crosses the projected
+      line ahead of the rabbit's stern.
+- [ ] Works entirely offline (no cellular, no external WiFi).
+
+**Phase placement.** 4.5, alongside the multi-crew sync. Same
+infrastructure; rabbit broadcast is one role, crew-sync is another.
+
+---
+
 ## Multi-crew access to same yacht data
 
 **Problem.** A yacht has multiple crew members. The helm has the phone mounted and wants big numbers. The tactician wants the start line and the wind shift history. The navigator wants the course and the mark list. Right now one person has OpenRacer open; everyone else is shouting across the boat.

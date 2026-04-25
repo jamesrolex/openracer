@@ -25,6 +25,7 @@ import {
   appendRoundingLeg,
   getTemplate,
   isCourseReadyToArm,
+  mutateStartLegForStartType,
 } from '../domain/courseTemplates';
 import type { RootStackScreenProps } from '../navigation';
 import { useBoatStore } from '../stores/useBoatStore';
@@ -33,7 +34,7 @@ import { useMarksStore } from '../stores/useMarksStore';
 import { useRaceStore } from '../stores/useRaceStore';
 import { useSettingsStore } from '../stores/useSettingsStore';
 import { getTheme } from '../theme/theme';
-import type { CourseTemplateId, Leg } from '../types/course';
+import type { CourseTemplateId, Leg, StartType } from '../types/course';
 import type { Mark, MarkInput } from '../types/mark';
 
 export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEntry'>) {
@@ -56,6 +57,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   const [templateId, setTemplateId] = useState<CourseTemplateId>(draft?.templateId ?? 'windward-leeward');
   const [name, setName] = useState(draft?.name ?? 'Wednesday evening');
   const [legs, setLegs] = useState<Leg[]>(() => draft?.legs ?? getTemplate('windward-leeward').buildLegs());
+  const [startType, setStartType] = useState<StartType>(draft?.startType ?? 'standard-line');
   const [pickerForLeg, setPickerForLeg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -68,16 +70,25 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
   useEffect(() => {
     if (!draft) return;
     const timer = setTimeout(() => {
-      void updateDraft({ name, legs });
+      void updateDraft({ name, legs, startType });
     }, 600);
     return () => clearTimeout(timer);
-  }, [draft, name, legs, updateDraft]);
+  }, [draft, name, legs, startType, updateDraft]);
 
   function pickTemplate(next: CourseTemplateId) {
     if (next === templateId) return;
-    const fresh = getTemplate(next).buildLegs();
+    const fresh = mutateStartLegForStartType(
+      getTemplate(next).buildLegs(),
+      startType,
+    );
     setTemplateId(next);
     setLegs(fresh);
+  }
+
+  function pickStartType(next: StartType) {
+    if (next === startType) return;
+    setStartType(next);
+    setLegs((prev) => mutateStartLegForStartType(prev, next));
   }
 
   async function ensureDraft() {
@@ -89,6 +100,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
       name,
       templateId,
       legs,
+      startType,
     });
     return created.id;
   }
@@ -153,7 +165,7 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
     if (draft) {
       await setLegMarks(pickerForLeg, nextMarkIds);
     } else {
-      await startDraft({ name, templateId, legs: nextLegs });
+      await startDraft({ name, templateId, legs: nextLegs, startType });
     }
 
     // Keep the sheet open if the leg still needs more marks (e.g. start
@@ -305,6 +317,52 @@ export function CourseEntryScreen({ navigation }: RootStackScreenProps<'CourseEn
           marginBottom={theme.space.md}
         >
           {selectedTemplate.description}
+        </Text>
+
+        <SectionLabel theme={theme}>Start type</SectionLabel>
+        <View flexDirection="row" marginBottom={theme.space.xs}>
+          {(
+            [
+              { key: 'standard-line', label: 'Standard line' },
+              { key: 'rabbit', label: 'Rabbit' },
+              { key: 'gate', label: 'Gate' },
+            ] as { key: StartType; label: string }[]
+          ).map(({ key, label }) => {
+            const active = key === startType;
+            return (
+              <Pressable key={key} onPress={() => pickStartType(key)} hitSlop={4}>
+                <View
+                  paddingVertical={theme.space.xs}
+                  paddingHorizontal={theme.space.sm}
+                  borderRadius={theme.radius.full}
+                  backgroundColor={active ? theme.accent : 'transparent'}
+                  borderColor={active ? theme.accent : theme.border}
+                  borderWidth={1}
+                  marginRight={theme.space.xs}
+                >
+                  <Text
+                    color={active ? theme.bg : theme.text.secondary}
+                    fontSize={theme.type.caption.size}
+                    fontWeight={theme.type.bodySemi.weight as '600'}
+                  >
+                    {label}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text
+          color={theme.text.muted}
+          fontSize={theme.type.caption.size}
+          lineHeight={theme.type.caption.lineHeight}
+          marginBottom={theme.space.md}
+        >
+          {startType === 'standard-line'
+            ? 'Fixed line: committee boat + pin. Two marks on the start leg.'
+            : startType === 'rabbit'
+              ? 'Moving line: rabbit boat sails on port. One fixed pin/guard mark; competitors start astern of the rabbit.'
+              : 'Moving line with a guard boat at the windward end. One fixed mark; same handling as a rabbit start.'}
         </Text>
 
         <SectionLabel theme={theme}>Name</SectionLabel>

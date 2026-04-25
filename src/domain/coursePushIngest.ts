@@ -99,6 +99,7 @@ export async function ingestCoursePushBundle(
       templateId: 'custom', // committee-pushed courses aren't bound to a template
       legs,
       state: 'draft',
+      startType: payload.startType ?? 'standard-line',
     },
     now,
   );
