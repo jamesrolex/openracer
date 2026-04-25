@@ -17,8 +17,19 @@ import { Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
-import { decodeBundle, describeDecodeError } from '../domain/coursePush';
-import { ingestCoursePushBundle } from '../domain/coursePushIngest';
+import {
+  decodeBoatProfile,
+  decodeBundle,
+  decodeRaceBundle,
+  describeBoatProfileDecodeError,
+  describeDecodeError,
+  describeRaceDecodeError,
+} from '../domain/coursePush';
+import {
+  ingestBoatProfile,
+  ingestCoursePushBundle,
+  ingestRaceBundle,
+} from '../domain/coursePushIngest';
 import { decodeQr, describeQrDecodeError } from '../domain/qrEnvelope';
 import type { RootStackScreenProps } from '../navigation';
 import { useCommitteeTrustStore } from '../stores/useCommitteeTrustStore';
@@ -91,6 +102,139 @@ export function ScanCoursePushScreen({
                   kind: 'success',
                   message: `Trusted ${t.committeeName}. You can now accept their courses.`,
                 });
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      // openracer-boat-profile (Phase 1.9 b — crew season setup)
+      if (envelope.envelope.kind === 'openracer-boat-profile') {
+        const result = decodeBoatProfile(JSON.stringify(envelope.envelope.bundle));
+        if (!result.ok) {
+          setStatus({
+            kind: 'error',
+            message: describeBoatProfileDecodeError(result.error),
+          });
+          return;
+        }
+        const profile = result.bundle;
+        const senderTrust = await lookupTrust(profile.payload.senderId);
+        if (!senderTrust) {
+          setStatus({
+            kind: 'error',
+            message: `Unknown sender "${profile.payload.senderName}". Have them show their committee identity QR first so you can trust their key.`,
+          });
+          return;
+        }
+        if (senderTrust.publicKey !== profile.publicKey) {
+          setStatus({
+            kind: 'error',
+            message: `Sender "${profile.payload.senderName}" is trusted but their key changed. Re-scan their identity QR if the rotation is legitimate.`,
+          });
+          return;
+        }
+        Alert.alert(
+          `Join "${profile.payload.boatName}"?`,
+          `Invited by ${profile.payload.senderName}\n${profile.payload.marks.length} marks\n${profile.payload.polarRaw ? 'Polar table included' : 'No polar table'}\n\nMarks already in your library will be reused, not duplicated.`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => {
+                lastHandled.current = null;
+                setStatus({ kind: 'scanning' });
+              },
+            },
+            {
+              text: 'Join',
+              style: 'default',
+              onPress: async () => {
+                setStatus({
+                  kind: 'processing',
+                  message: 'Joining boat…',
+                });
+                try {
+                  const out = await ingestBoatProfile(profile);
+                  await refreshMarks();
+                  setStatus({
+                    kind: 'success',
+                    message: `Joined "${profile.payload.boatName}". ${out.marksCreated} new marks, ${out.marksReused} reused${out.polarUpdated ? ', polar table set' : ''}.`,
+                  });
+                } catch (err) {
+                  setStatus({
+                    kind: 'error',
+                    message: err instanceof Error ? err.message : 'Join failed',
+                  });
+                }
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      // openracer-race-bundle (Phase 1.9 — crew sync)
+      if (envelope.envelope.kind === 'openracer-race-bundle') {
+        const result = decodeRaceBundle(JSON.stringify(envelope.envelope.bundle));
+        if (!result.ok) {
+          setStatus({
+            kind: 'error',
+            message: describeRaceDecodeError(result.error),
+          });
+          return;
+        }
+        const raceBundle = result.bundle;
+        const senderTrust = await lookupTrust(raceBundle.payload.senderId);
+        if (!senderTrust) {
+          setStatus({
+            kind: 'error',
+            message: `Unknown sender "${raceBundle.payload.senderName}". Have them show their committee identity QR first so you can trust their key.`,
+          });
+          return;
+        }
+        if (senderTrust.publicKey !== raceBundle.publicKey) {
+          setStatus({
+            kind: 'error',
+            message: `Sender "${raceBundle.payload.senderName}" is trusted but their key changed. Re-scan their identity QR if the rotation is legitimate.`,
+          });
+          return;
+        }
+        const gunDisplay = new Date(raceBundle.payload.gunAt).toLocaleTimeString(
+          'en-GB',
+          { hour: '2-digit', minute: '2-digit', second: '2-digit' },
+        );
+        Alert.alert(
+          `Join "${raceBundle.payload.raceName}"?`,
+          `From ${raceBundle.payload.senderName}\nGun at ${gunDisplay}\n${raceBundle.payload.course.legs.length} legs · ${raceBundle.payload.course.marks.length} marks\n\nYour timer will arm with the same gun + course.`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => {
+                lastHandled.current = null;
+                setStatus({ kind: 'scanning' });
+              },
+            },
+            {
+              text: 'Join',
+              style: 'default',
+              onPress: async () => {
+                setStatus({ kind: 'processing', message: 'Joining race…' });
+                try {
+                  const out = await ingestRaceBundle(raceBundle);
+                  await Promise.all([refreshMarks(), refreshCourses()]);
+                  setStatus({
+                    kind: 'success',
+                    message: `Armed for "${out.course.name}". ${out.marksCreated} new marks, ${out.marksReused} reused.`,
+                  });
+                } catch (err) {
+                  setStatus({
+                    kind: 'error',
+                    message: err instanceof Error ? err.message : 'Join failed',
+                  });
+                }
               },
             },
           ],

@@ -179,23 +179,29 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
           />
         </Section>
 
-        <Section theme={theme} title="Committee push">
+        <Section theme={theme} title="Crew + committee">
           <LinkRow
             theme={theme}
             label="My committee identity"
-            description="Keypair + QR for sailors to trust you."
+            description="Keypair + QR for sailors and crew to trust you."
             onPress={() => navigation.navigate('CommitteeIdentity')}
           />
           <LinkRow
             theme={theme}
-            label="Trusted committees"
-            description="Whose course broadcasts you'll accept."
+            label="Invite crew (Join boat)"
+            description="QR your crew scan once at season start — gives them your marks + polar."
+            onPress={() => navigation.navigate('ShareBoatProfile')}
+          />
+          <LinkRow
+            theme={theme}
+            label="Trusted committees + crew"
+            description="Whose bundles you'll accept (committees + crew leaders)."
             onPress={() => navigation.navigate('TrustedCommittees')}
           />
           <LinkRow
             theme={theme}
-            label="Scan a committee QR"
-            description="Add a trust key or accept a course."
+            label="Scan QR"
+            description="Trust key, accept a course, or join a race / boat profile from crew."
             onPress={() => navigation.navigate('ScanCoursePush')}
           />
         </Section>

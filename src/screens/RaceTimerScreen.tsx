@@ -527,21 +527,34 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
               )}
             </View>
 
-            <Pressable
-              onPress={() => setHelmMode(true)}
-              accessibilityLabel="Helm display"
-              hitSlop={8}
-            >
-              <Text
-                color={theme.text.muted}
-                fontSize={theme.type.caption.size}
-                fontWeight={theme.type.bodySemi.weight as '600'}
-                textAlign="center"
-                marginTop={theme.space.sm}
+            <View flexDirection="row" justifyContent="space-around" marginTop={theme.space.sm}>
+              <Pressable
+                onPress={() => setHelmMode(true)}
+                accessibilityLabel="Helm display"
+                hitSlop={8}
               >
-                ◐ Helm display (kiosk)
-              </Text>
-            </Pressable>
+                <Text
+                  color={theme.text.muted}
+                  fontSize={theme.type.caption.size}
+                  fontWeight={theme.type.bodySemi.weight as '600'}
+                >
+                  ◐ Helm display
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate('ShareRace')}
+                accessibilityLabel="Share with crew"
+                hitSlop={8}
+              >
+                <Text
+                  color={theme.accent}
+                  fontSize={theme.type.caption.size}
+                  fontWeight={theme.type.bodySemi.weight as '600'}
+                >
+                  ⇪ Share with crew
+                </Text>
+              </Pressable>
+            </View>
           </>
         ) : (
           <View alignItems="center" paddingVertical={theme.space.lg}>
