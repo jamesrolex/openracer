@@ -15,12 +15,22 @@
 import type { Course } from '../types/course';
 import type { Mark } from '../types/mark';
 import type {
+  BoatProfileMark,
+  BoatProfilePayload,
   CoursePushBundle,
   CoursePushLeg,
   CoursePushMark,
   CoursePushPayload,
+  RaceBundlePayload,
+  SignedBoatProfile,
+  SignedRaceBundle,
+  StartSequenceWire,
 } from '../types/coursePush';
-import { COURSE_PUSH_SCHEMA_VERSION } from '../types/coursePush';
+import {
+  BOAT_PROFILE_SCHEMA_VERSION,
+  COURSE_PUSH_SCHEMA_VERSION,
+  RACE_BUNDLE_SCHEMA_VERSION,
+} from '../types/coursePush';
 
 import { derivePublicKey, sign, verify } from './committeeKey';
 
@@ -205,5 +215,262 @@ export function describeDecodeError(err: DecodeError): string {
       return `Leg "${err.legLabel}" does not have enough marks.`;
     case 'mark-ref-unknown':
       return `Leg "${err.legLabel}" references mark "${err.markRef}" that is not in the bundle.`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 1.9 — race bundle codec
+// ---------------------------------------------------------------------------
+
+export interface BuildRaceBundleInput {
+  course: Course;
+  marks: Mark[];
+  senderId: string;
+  senderName: string;
+  privateKey: string;
+  raceName: string;
+  gunAt: Date;
+  startSequence: StartSequenceWire;
+  manualTrueWindDegrees?: number;
+  manualTrueWindKn?: number;
+  rabbitLaunchAt?: string;
+  now?: Date;
+}
+
+/** Build + sign a race bundle. Pure — no I/O. */
+export function buildRaceBundle(input: BuildRaceBundleInput): SignedRaceBundle {
+  const { course, marks, senderId, senderName, privateKey } = input;
+  const now = input.now ?? new Date();
+
+  // Build the embedded course payload by re-using the existing committee-
+  // push path. The course inside a race bundle is identical in shape to a
+  // committee bundle's payload.
+  const inner = buildBundle({
+    course,
+    marks,
+    committeeId: senderId,
+    committeeName: senderName,
+    privateKey,
+    now,
+  });
+
+  const payload: RaceBundlePayload = {
+    schemaVersion: RACE_BUNDLE_SCHEMA_VERSION,
+    issuedAt: now.toISOString(),
+    senderId,
+    senderName,
+    raceName: input.raceName,
+    course: inner.payload,
+    gunAt: input.gunAt.toISOString(),
+    startSequence: input.startSequence,
+    ...(input.manualTrueWindDegrees !== undefined
+      ? { manualTrueWindDegrees: input.manualTrueWindDegrees }
+      : {}),
+    ...(input.manualTrueWindKn !== undefined
+      ? { manualTrueWindKn: input.manualTrueWindKn }
+      : {}),
+    ...(input.rabbitLaunchAt ? { rabbitLaunchAt: input.rabbitLaunchAt } : {}),
+  };
+
+  const canonical = canonicalJson(payload);
+  const signature = sign(canonical, privateKey);
+
+  return {
+    payload,
+    signature,
+    publicKey: derivePublicKey(privateKey),
+  };
+}
+
+export type DecodeRaceError =
+  | { kind: 'invalid-json'; message: string }
+  | { kind: 'schema-mismatch'; got: string; expected: string }
+  | { kind: 'missing-field'; field: string }
+  | { kind: 'signature-invalid' };
+
+export type DecodeRaceResult =
+  | { ok: true; bundle: SignedRaceBundle }
+  | { ok: false; error: DecodeRaceError };
+
+/** Parse + verify a race bundle JSON string. */
+export function decodeRaceBundle(raw: string): DecodeRaceResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return {
+      ok: false,
+      error: { kind: 'invalid-json', message: (e as Error).message },
+    };
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    return {
+      ok: false,
+      error: { kind: 'invalid-json', message: 'not an object' },
+    };
+  }
+  const bundle = parsed as Partial<SignedRaceBundle>;
+  for (const field of ['payload', 'signature', 'publicKey'] as const) {
+    if (bundle[field] === undefined || bundle[field] === null) {
+      return { ok: false, error: { kind: 'missing-field', field } };
+    }
+  }
+  const payload = bundle.payload!;
+  if (payload.schemaVersion !== RACE_BUNDLE_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      error: {
+        kind: 'schema-mismatch',
+        got: payload.schemaVersion ?? 'unknown',
+        expected: RACE_BUNDLE_SCHEMA_VERSION,
+      },
+    };
+  }
+  for (const field of [
+    'senderId',
+    'senderName',
+    'raceName',
+    'course',
+    'gunAt',
+    'startSequence',
+  ] as const) {
+    if (payload[field] === undefined || payload[field] === null) {
+      return { ok: false, error: { kind: 'missing-field', field } };
+    }
+  }
+  const canonical = canonicalJson(payload);
+  if (!verify(canonical, bundle.signature!, bundle.publicKey!)) {
+    return { ok: false, error: { kind: 'signature-invalid' } };
+  }
+  return { ok: true, bundle: bundle as SignedRaceBundle };
+}
+
+export function describeRaceDecodeError(err: DecodeRaceError): string {
+  switch (err.kind) {
+    case 'invalid-json':
+      return `Race bundle is not valid JSON (${err.message}).`;
+    case 'schema-mismatch':
+      return `Race bundle version ${err.got} does not match this app (${err.expected}).`;
+    case 'missing-field':
+      return `Race bundle is missing required field "${err.field}".`;
+    case 'signature-invalid':
+      return 'Race-bundle signature did not verify — sender key may have changed, or the bundle was tampered with.';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 1.9 b — boat-profile codec
+// ---------------------------------------------------------------------------
+
+export interface BuildBoatProfileInput {
+  senderId: string;
+  senderName: string;
+  privateKey: string;
+  boatName: string;
+  marks: Mark[];
+  polarRaw?: string;
+  now?: Date;
+}
+
+export function buildBoatProfile(input: BuildBoatProfileInput): SignedBoatProfile {
+  const now = input.now ?? new Date();
+  const profileMarks: BoatProfileMark[] = input.marks.map((m) => {
+    const out: BoatProfileMark = {
+      refId: m.id,
+      name: m.name,
+      latitude: m.latitude,
+      longitude: m.longitude,
+      tier: m.tier,
+      source: m.source,
+      icon: m.icon,
+      shape: m.shape,
+    };
+    if (m.notes) out.notes = m.notes;
+    if (m.colourHint) out.colourHint = m.colourHint;
+    return out;
+  });
+  const payload: BoatProfilePayload = {
+    schemaVersion: BOAT_PROFILE_SCHEMA_VERSION,
+    issuedAt: now.toISOString(),
+    senderId: input.senderId,
+    senderName: input.senderName,
+    boatName: input.boatName,
+    marks: profileMarks,
+    ...(input.polarRaw ? { polarRaw: input.polarRaw } : {}),
+  };
+  const canonical = canonicalJson(payload);
+  const signature = sign(canonical, input.privateKey);
+  return {
+    payload,
+    signature,
+    publicKey: derivePublicKey(input.privateKey),
+  };
+}
+
+export type DecodeProfileError =
+  | { kind: 'invalid-json'; message: string }
+  | { kind: 'schema-mismatch'; got: string; expected: string }
+  | { kind: 'missing-field'; field: string }
+  | { kind: 'signature-invalid' };
+
+export type DecodeProfileResult =
+  | { ok: true; bundle: SignedBoatProfile }
+  | { ok: false; error: DecodeProfileError };
+
+export function decodeBoatProfile(raw: string): DecodeProfileResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return {
+      ok: false,
+      error: { kind: 'invalid-json', message: (e as Error).message },
+    };
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    return {
+      ok: false,
+      error: { kind: 'invalid-json', message: 'not an object' },
+    };
+  }
+  const bundle = parsed as Partial<SignedBoatProfile>;
+  for (const field of ['payload', 'signature', 'publicKey'] as const) {
+    if (bundle[field] === undefined || bundle[field] === null) {
+      return { ok: false, error: { kind: 'missing-field', field } };
+    }
+  }
+  const payload = bundle.payload!;
+  if (payload.schemaVersion !== BOAT_PROFILE_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      error: {
+        kind: 'schema-mismatch',
+        got: payload.schemaVersion ?? 'unknown',
+        expected: BOAT_PROFILE_SCHEMA_VERSION,
+      },
+    };
+  }
+  for (const field of ['senderId', 'senderName', 'boatName', 'marks'] as const) {
+    if (payload[field] === undefined || payload[field] === null) {
+      return { ok: false, error: { kind: 'missing-field', field } };
+    }
+  }
+  const canonical = canonicalJson(payload);
+  if (!verify(canonical, bundle.signature!, bundle.publicKey!)) {
+    return { ok: false, error: { kind: 'signature-invalid' } };
+  }
+  return { ok: true, bundle: bundle as SignedBoatProfile };
+}
+
+export function describeBoatProfileDecodeError(err: DecodeProfileError): string {
+  switch (err.kind) {
+    case 'invalid-json':
+      return `Boat profile is not valid JSON (${err.message}).`;
+    case 'schema-mismatch':
+      return `Boat profile version ${err.got} does not match this app (${err.expected}).`;
+    case 'missing-field':
+      return `Boat profile is missing required field "${err.field}".`;
+    case 'signature-invalid':
+      return 'Boat-profile signature did not verify.';
   }
 }

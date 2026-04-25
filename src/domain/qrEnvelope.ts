@@ -12,6 +12,7 @@ import type {
   CommitteeTrust,
   CoursePushBundle,
   QrEnvelope,
+  SignedRaceBundle,
 } from '../types/coursePush';
 import { QR_ENVELOPE_VERSION } from '../types/coursePush';
 
@@ -27,6 +28,15 @@ export function encodeTrustQr(trust: Omit<CommitteeTrust, 'addedAt'>): string {
 export function encodeBundleQr(bundle: CoursePushBundle): string {
   const envelope: QrEnvelope = {
     kind: 'openracer-bundle',
+    version: QR_ENVELOPE_VERSION,
+    bundle,
+  };
+  return JSON.stringify(envelope);
+}
+
+export function encodeRaceBundleQr(bundle: SignedRaceBundle): string {
+  const envelope: QrEnvelope = {
+    kind: 'openracer-race-bundle',
     version: QR_ENVELOPE_VERSION,
     bundle,
   };
@@ -59,7 +69,11 @@ export function decodeQr(raw: string): QrDecodeResult {
   }
 
   const env = parsed as Partial<QrEnvelope>;
-  if (env.kind !== 'openracer-trust' && env.kind !== 'openracer-bundle') {
+  if (
+    env.kind !== 'openracer-trust' &&
+    env.kind !== 'openracer-bundle' &&
+    env.kind !== 'openracer-race-bundle'
+  ) {
     return { ok: false, error: { kind: 'not-openracer', got: String(env.kind) } };
   }
   if (env.version !== QR_ENVELOPE_VERSION) {
@@ -76,7 +90,10 @@ export function decodeQr(raw: string): QrDecodeResult {
   if (env.kind === 'openracer-trust' && !env.trust) {
     return { ok: false, error: { kind: 'missing-field', field: 'trust' } };
   }
-  if (env.kind === 'openracer-bundle' && !env.bundle) {
+  if (
+    (env.kind === 'openracer-bundle' || env.kind === 'openracer-race-bundle') &&
+    !env.bundle
+  ) {
     return { ok: false, error: { kind: 'missing-field', field: 'bundle' } };
   }
 

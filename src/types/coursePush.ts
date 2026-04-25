@@ -102,16 +102,102 @@ export interface CommitteeTrust {
 }
 
 /**
- * QR envelope. A QR code carries one of two payload kinds:
+ * Race-share bundle (Phase 1.9). Reuses the committee-push course
+ * payload but adds the live race state: gun time + sequence + the
+ * inputs that shape the start-line readout. Sender signs with the
+ * same ECDSA P-256 keypair used for committee identity, so trust
+ * is identical — receivers only accept bundles from senders in
+ * their trust list (or via trust-on-first-use UI).
+ */
+export const RACE_BUNDLE_SCHEMA_VERSION = '1.0.0';
+
+export interface StartSequenceWire {
+  warningAtMs: number;
+  preparatoryAtMs: number;
+  oneMinuteAtMs: number;
+  startAtMs: 0;
+}
+
+export interface RaceBundlePayload {
+  schemaVersion: string;
+  /** ISO 8601 UTC — when the sender shared the bundle. */
+  issuedAt: string;
+  senderId: string;
+  senderName: string;
+  /** Free text — typically the course name from the sender's draft. */
+  raceName: string;
+  /** The course as committee-push payload. Receivers reuse the
+   *  existing ingest path to materialise it locally. */
+  course: CoursePushPayload;
+  /** ISO 8601 UTC — sequenceStartTime at the moment of share. */
+  gunAt: string;
+  startSequence: StartSequenceWire;
+  manualTrueWindDegrees?: number;
+  manualTrueWindKn?: number;
+  rabbitLaunchAt?: string;
+}
+
+export interface SignedRaceBundle {
+  payload: RaceBundlePayload;
+  /** base64url-encoded ECDSA P-256 signature over canonical JSON of payload. */
+  signature: string;
+  /** base64url-encoded sender public key. */
+  publicKey: string;
+}
+
+/**
+ * Boat-profile bundle (Phase 1.9 b) — share the persistent setup state
+ * with crew at the start of a season. Carries the saved marks library
+ * plus the polar table. Settings + theme + per-race state are NOT
+ * shared (those are per-device / per-race).
+ */
+export const BOAT_PROFILE_SCHEMA_VERSION = '1.0.0';
+
+export interface BoatProfileMark {
+  refId: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  tier: MarkTier;
+  source: string;
+  icon: MarkIcon;
+  shape: MarkShape;
+  notes?: string;
+  colourHint?: string;
+}
+
+export interface BoatProfilePayload {
+  schemaVersion: string;
+  issuedAt: string;
+  senderId: string;
+  senderName: string;
+  /** Free text — typically the boat name. */
+  boatName: string;
+  marks: BoatProfileMark[];
+  /** ORC polar text, optional. */
+  polarRaw?: string;
+}
+
+export interface SignedBoatProfile {
+  payload: BoatProfilePayload;
+  signature: string;
+  publicKey: string;
+}
+
+/**
+ * QR envelope. A QR code carries one of three payload kinds:
  *
  * - `trust`: committee's public identity. Scanning it adds the committee
  *   to the receiver's trust list so future bundles from them are accepted.
- * - `bundle`: a signed course-push bundle (same shape as over-the-wire).
+ * - `bundle`: a signed course-push bundle (committee → fleet).
+ * - `race-bundle`: a signed live-race bundle (helm → crew, Phase 1.9).
  *
  * A discriminator is cheap and keeps the scanner from mis-dispatching.
  */
 export type QrEnvelope =
   | { kind: 'openracer-trust'; version: string; trust: Omit<CommitteeTrust, 'addedAt'> }
-  | { kind: 'openracer-bundle'; version: string; bundle: CoursePushBundle };
+  | { kind: 'openracer-bundle'; version: string; bundle: CoursePushBundle }
+  | { kind: 'openracer-race-bundle'; version: string; bundle: SignedRaceBundle }
+  | { kind: 'openracer-boat-profile'; version: string; bundle: SignedBoatProfile };
 
 export const QR_ENVELOPE_VERSION = '1.0.0';
