@@ -188,8 +188,8 @@ export function SettingsScreen({ navigation }: RootStackScreenProps<'Settings'>)
         <Section theme={theme} title="Crew + committee">
           <LinkRow
             theme={theme}
-            label="My committee identity"
-            description="Keypair + QR for sailors and crew to trust you."
+            label="My signing identity"
+            description="Keypair + QR for sailors and crew to trust you. One key signs every share."
             onPress={() => navigation.navigate('CommitteeIdentity')}
           />
           <LinkRow

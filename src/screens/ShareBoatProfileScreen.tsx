@@ -137,8 +137,8 @@ export function ShareBoatProfileScreen({
         {!identity ? (
           <EmptyState
             theme={theme}
-            title="Committee identity required"
-            body="Crew need to verify the bundle against your public key. Set up your identity once — same key works for sharing everything."
+            title="Signing identity required"
+            body="Your crew need to verify the bundle against your public key — proves it really came from you. Set up your identity once; the same key signs every share."
             cta="Set up identity"
             onCta={() => navigation.replace('CommitteeIdentity')}
           />

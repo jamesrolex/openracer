@@ -59,7 +59,7 @@ export function CommitteeIdentityScreen({
   }
 
   function handleClear() {
-    Alert.alert('Delete committee identity?', 'Your keypair will be wiped.', [
+    Alert.alert('Delete signing identity?', 'Your keypair will be wiped. Anyone trusting your previous key will need to re-trust the new one when you regenerate.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -102,7 +102,7 @@ export function CommitteeIdentityScreen({
             fontSize={theme.type.h2.size}
             fontWeight={theme.type.h2.weight as '600'}
           >
-            Committee
+            My identity
           </Text>
           <View width={44} />
         </View>
@@ -212,7 +212,7 @@ export function CommitteeIdentityScreen({
                   fontSize={theme.type.body.size}
                   fontWeight={theme.type.bodySemi.weight as '600'}
                 >
-                  Delete committee identity
+                  Delete signing identity
                 </Text>
               </View>
             </Pressable>
@@ -225,17 +225,17 @@ export function CommitteeIdentityScreen({
               lineHeight={theme.type.body.lineHeight}
               marginBottom={theme.space.md}
             >
-              Set up your committee identity. We’ll generate a keypair;
-              the private key stays on this phone, and sailors get a QR
-              with the public half so they can accept your course
-              broadcasts.
+              Set up your signing identity. We’ll generate a keypair;
+              the private key stays on this phone, and crew + sailors
+              scan a QR with the public half once so they can verify
+              every share you sign — courses, races, boat profiles.
             </Text>
 
-            <Label theme={theme}>Committee name</Label>
+            <Label theme={theme}>Display name</Label>
             <Input
               value={nameDraft}
               onChangeText={setNameDraft}
-              placeholder="Abersoch Sailing Club"
+              placeholder="James Coop / Pantera / Abersoch SC"
               height={44}
               paddingHorizontal={theme.space.md}
               fontSize={theme.type.body.size}
@@ -246,11 +246,11 @@ export function CommitteeIdentityScreen({
               marginBottom={theme.space.md}
             />
 
-            <Label theme={theme}>Committee id</Label>
+            <Label theme={theme}>Identity id</Label>
             <Input
               value={idDraft}
               onChangeText={setIdDraft}
-              placeholder="abersoch-sc"
+              placeholder="james-coop or pantera-1"
               autoCapitalize="none"
               autoCorrect={false}
               height={44}

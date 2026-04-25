@@ -85,7 +85,7 @@ export function ShareCourseScreen({ navigation }: RootStackScreenProps<'ShareCou
         {!identity ? (
           <EmptyState
             theme={theme}
-            title="Set up committee identity first"
+            title="Signing identity required"
             body="Sailors need to verify your broadcast against a known public key. Create your identity so the QR can be signed."
             cta="Set up identity"
             onCta={() => navigation.replace('CommitteeIdentity')}

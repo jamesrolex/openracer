@@ -86,8 +86,8 @@ export function TrustedCommitteesScreen({
               lineHeight={theme.type.body.lineHeight}
               textAlign="center"
             >
-              No committees trusted yet. Tap <Text color={theme.accent}>+ Scan</Text> to add
-              one by scanning their trust QR.
+              No-one trusted yet. Tap <Text color={theme.accent}>+ Scan</Text> to add
+              a captain, race officer, or fleet committee by scanning their identity QR.
             </Text>
           </View>
         ) : (

@@ -82,8 +82,8 @@ export function ScanCoursePushScreen({
       if (envelope.envelope.kind === 'openracer-trust') {
         const t = envelope.envelope.trust;
         Alert.alert(
-          'Trust this committee?',
-          `${t.committeeName} (${t.committeeId})\n\nCourses signed by this public key will be accepted from now on.`,
+          `Trust ${t.committeeName}?`,
+          `Identity id: ${t.committeeId}\n\nBundles signed by this public key — courses, races, or boat profiles — will be accepted from now on.`,
           [
             {
               text: 'Cancel',
@@ -100,7 +100,7 @@ export function ScanCoursePushScreen({
                 await addTrust(t);
                 setStatus({
                   kind: 'success',
-                  message: `Trusted ${t.committeeName}. You can now accept their courses.`,
+                  message: `Trusted ${t.committeeName}. You can now accept their courses, races, and boat profiles.`,
                 });
               },
             },
@@ -124,7 +124,7 @@ export function ScanCoursePushScreen({
         if (!senderTrust) {
           setStatus({
             kind: 'error',
-            message: `Unknown sender "${profile.payload.senderName}". Have them show their committee identity QR first so you can trust their key.`,
+            message: `Unknown sender "${profile.payload.senderName}". Have them show their identity QR first so you can trust their key.`,
           });
           return;
         }
@@ -190,7 +190,7 @@ export function ScanCoursePushScreen({
         if (!senderTrust) {
           setStatus({
             kind: 'error',
-            message: `Unknown sender "${raceBundle.payload.senderName}". Have them show their committee identity QR first so you can trust their key.`,
+            message: `Unknown sender "${raceBundle.payload.senderName}". Have them show their identity QR first so you can trust their key.`,
           });
           return;
         }

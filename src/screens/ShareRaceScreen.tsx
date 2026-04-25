@@ -116,8 +116,8 @@ export function ShareRaceScreen({ navigation }: RootStackScreenProps<'ShareRace'
         {!identity ? (
           <EmptyState
             theme={theme}
-            title="Set up committee identity first"
-            body="Crew need to verify your share against a known public key. Set up your identity once — same key works for sharing races and pushing committee courses."
+            title="Signing identity required"
+            body="Crew need to verify the share against a known public key. Set up your identity once — same key works for sharing races, inviting crew, and pushing committee courses."
             cta="Set up identity"
             onCta={() => navigation.replace('CommitteeIdentity')}
           />
