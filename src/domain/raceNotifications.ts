@@ -26,6 +26,12 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   return req.granted;
 }
 
+/** Read-only notifications-permission check. No prompt fired. */
+export async function checkNotificationPermissions(): Promise<boolean> {
+  const settings = await Notifications.getPermissionsAsync();
+  return settings.granted;
+}
+
 export async function cancelAllRaceNotifications(): Promise<void> {
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const ids = scheduled
