@@ -185,6 +185,45 @@ export interface SignedBoatProfile {
 }
 
 /**
+ * Finish-record bundle (Phase 1.15) — a single boat's race result, shared
+ * post-race over QR. Receivers merge multiple finish records into a
+ * leaderboard view.
+ *
+ * Carries enough context to be useful standalone: race name, boat name,
+ * gun time, finish time, elapsed seconds. Optional course id lets the
+ * receiver deduplicate multiple shares of the same race when several
+ * boats sailed the same one.
+ */
+export const FINISH_RECORD_SCHEMA_VERSION = '1.0.0';
+
+export interface FinishRecordPayload {
+  schemaVersion: string;
+  /** ISO 8601 UTC — when the sender shared the bundle. */
+  issuedAt: string;
+  senderId: string;
+  senderName: string;
+  /** Free text — the course / race name. */
+  raceName: string;
+  /** Free text — the boat name (often === senderName but not always; a
+   *  sailor on someone else's boat shares with that boat's name). */
+  boatName: string;
+  /** ISO 8601 UTC — start gun. */
+  gunAt: string;
+  /** ISO 8601 UTC — finish time. */
+  finishedAt: string;
+  /** Elapsed race time in seconds (finishedAt - gunAt). */
+  elapsedSeconds: number;
+  /** Optional course id for dedup; null if the race wasn't course-driven. */
+  courseId?: string;
+}
+
+export interface SignedFinishRecord {
+  payload: FinishRecordPayload;
+  signature: string;
+  publicKey: string;
+}
+
+/**
  * QR envelope. A QR code carries one of three payload kinds:
  *
  * - `trust`: committee's public identity. Scanning it adds the committee
@@ -198,6 +237,7 @@ export type QrEnvelope =
   | { kind: 'openracer-trust'; version: string; trust: Omit<CommitteeTrust, 'addedAt'> }
   | { kind: 'openracer-bundle'; version: string; bundle: CoursePushBundle }
   | { kind: 'openracer-race-bundle'; version: string; bundle: SignedRaceBundle }
-  | { kind: 'openracer-boat-profile'; version: string; bundle: SignedBoatProfile };
+  | { kind: 'openracer-boat-profile'; version: string; bundle: SignedBoatProfile }
+  | { kind: 'openracer-finish'; version: string; bundle: SignedFinishRecord };
 
 export const QR_ENVELOPE_VERSION = '1.0.0';

@@ -12,6 +12,8 @@ import type {
   CommitteeTrust,
   CoursePushBundle,
   QrEnvelope,
+  SignedBoatProfile,
+  SignedFinishRecord,
   SignedRaceBundle,
 } from '../types/coursePush';
 import { QR_ENVELOPE_VERSION } from '../types/coursePush';
@@ -37,6 +39,24 @@ export function encodeBundleQr(bundle: CoursePushBundle): string {
 export function encodeRaceBundleQr(bundle: SignedRaceBundle): string {
   const envelope: QrEnvelope = {
     kind: 'openracer-race-bundle',
+    version: QR_ENVELOPE_VERSION,
+    bundle,
+  };
+  return JSON.stringify(envelope);
+}
+
+export function encodeBoatProfileQr(bundle: SignedBoatProfile): string {
+  const envelope: QrEnvelope = {
+    kind: 'openracer-boat-profile',
+    version: QR_ENVELOPE_VERSION,
+    bundle,
+  };
+  return JSON.stringify(envelope);
+}
+
+export function encodeFinishQr(bundle: SignedFinishRecord): string {
+  const envelope: QrEnvelope = {
+    kind: 'openracer-finish',
     version: QR_ENVELOPE_VERSION,
     bundle,
   };
@@ -69,11 +89,14 @@ export function decodeQr(raw: string): QrDecodeResult {
   }
 
   const env = parsed as Partial<QrEnvelope>;
-  if (
-    env.kind !== 'openracer-trust' &&
-    env.kind !== 'openracer-bundle' &&
-    env.kind !== 'openracer-race-bundle'
-  ) {
+  const knownKinds = [
+    'openracer-trust',
+    'openracer-bundle',
+    'openracer-race-bundle',
+    'openracer-boat-profile',
+    'openracer-finish',
+  ] as const;
+  if (!knownKinds.includes(env.kind as (typeof knownKinds)[number])) {
     return { ok: false, error: { kind: 'not-openracer', got: String(env.kind) } };
   }
   if (env.version !== QR_ENVELOPE_VERSION) {
@@ -91,7 +114,10 @@ export function decodeQr(raw: string): QrDecodeResult {
     return { ok: false, error: { kind: 'missing-field', field: 'trust' } };
   }
   if (
-    (env.kind === 'openracer-bundle' || env.kind === 'openracer-race-bundle') &&
+    (env.kind === 'openracer-bundle' ||
+      env.kind === 'openracer-race-bundle' ||
+      env.kind === 'openracer-boat-profile' ||
+      env.kind === 'openracer-finish') &&
     !env.bundle
   ) {
     return { ok: false, error: { kind: 'missing-field', field: 'bundle' } };

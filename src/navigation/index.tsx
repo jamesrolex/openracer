@@ -15,6 +15,7 @@ import { CommitteeIdentityScreen } from '../screens/CommitteeIdentityScreen';
 import { CourseEntryScreen } from '../screens/CourseEntryScreen';
 import { CourseLibraryScreen } from '../screens/CourseLibraryScreen';
 import { CruiseDisplayScreen } from '../screens/CruiseDisplayScreen';
+import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MarkBearingScreen } from '../screens/MarkBearingScreen';
 import { MarkEditScreen } from '../screens/MarkEditScreen';
@@ -28,6 +29,7 @@ import { ScanCoursePushScreen } from '../screens/ScanCoursePushScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ShareBoatProfileScreen } from '../screens/ShareBoatProfileScreen';
 import { ShareCourseScreen } from '../screens/ShareCourseScreen';
+import { ShareFinishScreen } from '../screens/ShareFinishScreen';
 import { ShareRaceScreen } from '../screens/ShareRaceScreen';
 import { TrustedCommitteesScreen } from '../screens/TrustedCommitteesScreen';
 
@@ -45,7 +47,9 @@ export type RootStackParamList = {
   CommitteeIdentity: undefined;
   ShareCourse: undefined;
   ShareRace: undefined;
+  ShareFinish: { sessionId: string };
   ShareBoatProfile: undefined;
+  Leaderboard: undefined;
   SailorLog: undefined;
   ScanCoursePush: undefined;
   TrustedCommittees: undefined;
@@ -82,7 +86,9 @@ export function RootNavigator() {
       <Stack.Screen name="CommitteeIdentity" component={CommitteeIdentityScreen} />
       <Stack.Screen name="ShareCourse" component={ShareCourseScreen} />
       <Stack.Screen name="ShareRace" component={ShareRaceScreen} />
+      <Stack.Screen name="ShareFinish" component={ShareFinishScreen} />
       <Stack.Screen name="ShareBoatProfile" component={ShareBoatProfileScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="SailorLog" component={SailorLogScreen} />
       <Stack.Screen name="ScanCoursePush" component={ScanCoursePushScreen} />
       <Stack.Screen name="TrustedCommittees" component={TrustedCommitteesScreen} />

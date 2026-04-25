@@ -21,14 +21,17 @@ import type {
   CoursePushLeg,
   CoursePushMark,
   CoursePushPayload,
+  FinishRecordPayload,
   RaceBundlePayload,
   SignedBoatProfile,
+  SignedFinishRecord,
   SignedRaceBundle,
   StartSequenceWire,
 } from '../types/coursePush';
 import {
   BOAT_PROFILE_SCHEMA_VERSION,
   COURSE_PUSH_SCHEMA_VERSION,
+  FINISH_RECORD_SCHEMA_VERSION,
   RACE_BUNDLE_SCHEMA_VERSION,
 } from '../types/coursePush';
 
@@ -472,5 +475,123 @@ export function describeBoatProfileDecodeError(err: DecodeProfileError): string 
       return `Boat profile is missing required field "${err.field}".`;
     case 'signature-invalid':
       return 'Boat-profile signature did not verify.';
+  }
+}
+
+// ----- Phase 1.15 — finish records ---------------------------------------
+
+export interface BuildFinishRecordInput {
+  privateKey: string;
+  senderId: string;
+  senderName: string;
+  raceName: string;
+  boatName: string;
+  gunAt: Date;
+  finishedAt: Date;
+  courseId?: string;
+  now?: Date;
+}
+
+export function buildFinishRecord(
+  input: BuildFinishRecordInput,
+): SignedFinishRecord {
+  const elapsedSeconds = Math.max(
+    0,
+    Math.round((input.finishedAt.getTime() - input.gunAt.getTime()) / 1000),
+  );
+  const payload: FinishRecordPayload = {
+    schemaVersion: FINISH_RECORD_SCHEMA_VERSION,
+    issuedAt: (input.now ?? new Date()).toISOString(),
+    senderId: input.senderId,
+    senderName: input.senderName,
+    raceName: input.raceName,
+    boatName: input.boatName,
+    gunAt: input.gunAt.toISOString(),
+    finishedAt: input.finishedAt.toISOString(),
+    elapsedSeconds,
+    ...(input.courseId ? { courseId: input.courseId } : {}),
+  };
+  const canonical = canonicalJson(payload);
+  const signature = sign(canonical, input.privateKey);
+  return {
+    payload,
+    signature,
+    publicKey: derivePublicKey(input.privateKey),
+  };
+}
+
+export type DecodeFinishError =
+  | { kind: 'invalid-json'; message: string }
+  | { kind: 'schema-mismatch'; got: string; expected: string }
+  | { kind: 'missing-field'; field: string }
+  | { kind: 'signature-invalid' };
+
+export type DecodeFinishResult =
+  | { ok: true; bundle: SignedFinishRecord }
+  | { ok: false; error: DecodeFinishError };
+
+export function decodeFinishRecord(raw: string): DecodeFinishResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return {
+      ok: false,
+      error: { kind: 'invalid-json', message: (e as Error).message },
+    };
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    return {
+      ok: false,
+      error: { kind: 'invalid-json', message: 'not an object' },
+    };
+  }
+  const bundle = parsed as Partial<SignedFinishRecord>;
+  for (const field of ['payload', 'signature', 'publicKey'] as const) {
+    if (bundle[field] === undefined || bundle[field] === null) {
+      return { ok: false, error: { kind: 'missing-field', field } };
+    }
+  }
+  const payload = bundle.payload!;
+  if (payload.schemaVersion !== FINISH_RECORD_SCHEMA_VERSION) {
+    return {
+      ok: false,
+      error: {
+        kind: 'schema-mismatch',
+        got: payload.schemaVersion ?? 'unknown',
+        expected: FINISH_RECORD_SCHEMA_VERSION,
+      },
+    };
+  }
+  for (const field of [
+    'senderId',
+    'senderName',
+    'raceName',
+    'boatName',
+    'gunAt',
+    'finishedAt',
+    'elapsedSeconds',
+  ] as const) {
+    if (payload[field] === undefined || payload[field] === null) {
+      return { ok: false, error: { kind: 'missing-field', field } };
+    }
+  }
+  const canonical = canonicalJson(payload);
+  if (!verify(canonical, bundle.signature!, bundle.publicKey!)) {
+    return { ok: false, error: { kind: 'signature-invalid' } };
+  }
+  return { ok: true, bundle: bundle as SignedFinishRecord };
+}
+
+export function describeFinishDecodeError(err: DecodeFinishError): string {
+  switch (err.kind) {
+    case 'invalid-json':
+      return `Finish record is not valid JSON (${err.message}).`;
+    case 'schema-mismatch':
+      return `Finish-record version ${err.got} does not match this app (${err.expected}).`;
+    case 'missing-field':
+      return `Finish record is missing required field "${err.field}".`;
+    case 'signature-invalid':
+      return 'Finish-record signature did not verify.';
   }
 }

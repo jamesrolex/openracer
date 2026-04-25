@@ -36,6 +36,7 @@ issue with the `feature` label.
 | B-011 | Text inputs on MarkEdit + MarkLibrary are squashed (Tamagui `size="$md"` collides with my 8-point spacing scale → 16 pt-tall input) | 1 | medium | fixed | Dropped Tamagui `size` prop on `Input` everywhere; inputs now use explicit `height={44}`, `paddingHorizontal`, `fontSize` matching the design-system body scale |
 | B-012 | Rounding direction (port / starboard) not shown on CourseEntry leg rows — data model has it but UI never rendered it | 1 | medium | fixed | LegRow now shows a tappable P / S chip that toggles per-leg rounding; CourseStrip inherits the same marker under each rounding chip |
 | B-013 | Point-at-mark second bearing is confusing — user can't tell which sighting they're capturing, no visual aid for aiming | 1 | high | fixed | Rebuilt MarkPointAtScreen around a live CompassDial with a fixed red crosshair and a persistent green wedge for the first-sighting bearing; added a colour-coded "STEP 1/2 OF 2" banner that flips amber → green when enough distance has been walked |
+| B-014 | `decodeQr` rejects `openracer-boat-profile` envelopes — guard list missing the kind, so Phase 1.9b boat-profile QR scan was effectively non-functional | 1.15 | high | fixed | Refactored guard into a single `knownKinds` array covering trust / bundle / race-bundle / boat-profile / finish — extending the union now requires touching one place |
 
 Severity scale: `critical` (exit-gate blocker), `high` (feature broken for
 many users), `medium` (feature broken for some), `low` (cosmetic / edge case).

@@ -2,7 +2,15 @@ import type { Course } from '../types/course';
 import type { Mark } from '../types/mark';
 
 import { generateKeyPair } from './committeeKey';
-import { buildBundle, canonicalJson, decodeBundle, describeDecodeError } from './coursePush';
+import {
+  buildBundle,
+  buildFinishRecord,
+  canonicalJson,
+  decodeBundle,
+  decodeFinishRecord,
+  describeDecodeError,
+  describeFinishDecodeError,
+} from './coursePush';
 
 function mark(id: string, name: string, lat = 52.8, lon = -4.5): Mark {
   return {
@@ -208,5 +216,105 @@ describe('describeDecodeError', () => {
         markRef: 'm-x',
       }),
     ).toMatch(/Wind/);
+  });
+});
+
+// ----- Phase 1.15 — finish-record codec ----------------------------------
+
+describe('buildFinishRecord + decodeFinishRecord', () => {
+  it('round-trips a valid finish record', () => {
+    const { privateKey } = generateKeyPair();
+    const gunAt = new Date('2026-04-29T18:00:00Z');
+    const finishedAt = new Date('2026-04-29T18:42:18Z');
+    const bundle = buildFinishRecord({
+      privateKey,
+      senderId: 'cmt_pantera',
+      senderName: 'James Coop',
+      raceName: 'Wed evening 29 Apr',
+      boatName: 'Pantera',
+      gunAt,
+      finishedAt,
+      courseId: 'course-1',
+    });
+    expect(bundle.payload.elapsedSeconds).toBe(2538);
+    const raw = JSON.stringify(bundle);
+    const result = decodeFinishRecord(raw);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.bundle.payload.boatName).toBe('Pantera');
+      expect(result.bundle.payload.elapsedSeconds).toBe(2538);
+    }
+  });
+
+  it('rejects a tampered finish record', () => {
+    const { privateKey } = generateKeyPair();
+    const bundle = buildFinishRecord({
+      privateKey,
+      senderId: 'cmt',
+      senderName: 'James',
+      raceName: 'R',
+      boatName: 'Pantera',
+      gunAt: new Date('2026-04-29T18:00:00Z'),
+      finishedAt: new Date('2026-04-29T18:30:00Z'),
+    });
+    const tampered = JSON.stringify({
+      ...bundle,
+      payload: { ...bundle.payload, boatName: 'Cheating Boat' },
+    });
+    const result = decodeFinishRecord(tampered);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe('signature-invalid');
+  });
+
+  it('rejects when required field is missing', () => {
+    const { privateKey } = generateKeyPair();
+    const bundle = buildFinishRecord({
+      privateKey,
+      senderId: 'cmt',
+      senderName: 'James',
+      raceName: 'R',
+      boatName: 'Pantera',
+      gunAt: new Date('2026-04-29T18:00:00Z'),
+      finishedAt: new Date('2026-04-29T18:30:00Z'),
+    });
+    const broken = JSON.stringify({
+      ...bundle,
+      payload: { ...bundle.payload, boatName: undefined },
+    });
+    const result = decodeFinishRecord(broken);
+    expect(result.ok).toBe(false);
+  });
+
+  it('clamps elapsed seconds to non-negative', () => {
+    const { privateKey } = generateKeyPair();
+    const bundle = buildFinishRecord({
+      privateKey,
+      senderId: 'cmt',
+      senderName: 'James',
+      raceName: 'R',
+      boatName: 'Pantera',
+      gunAt: new Date('2026-04-29T18:30:00Z'),
+      // Finished before gun (should never happen, but) — clamps to 0.
+      finishedAt: new Date('2026-04-29T18:00:00Z'),
+    });
+    expect(bundle.payload.elapsedSeconds).toBe(0);
+  });
+
+  it('describeFinishDecodeError covers all variants', () => {
+    expect(describeFinishDecodeError({ kind: 'invalid-json', message: 'oops' }))
+      .toContain('not valid JSON');
+    expect(
+      describeFinishDecodeError({
+        kind: 'schema-mismatch',
+        got: '0.5.0',
+        expected: '1.0.0',
+      }),
+    ).toContain('does not match');
+    expect(
+      describeFinishDecodeError({ kind: 'missing-field', field: 'boatName' }),
+    ).toContain('boatName');
+    expect(describeFinishDecodeError({ kind: 'signature-invalid' })).toContain(
+      'signature',
+    );
   });
 });

@@ -20,9 +20,11 @@ import { Text, View } from 'tamagui';
 import {
   decodeBoatProfile,
   decodeBundle,
+  decodeFinishRecord,
   decodeRaceBundle,
   describeBoatProfileDecodeError,
   describeDecodeError,
+  describeFinishDecodeError,
   describeRaceDecodeError,
 } from '../domain/coursePush';
 import {
@@ -32,6 +34,7 @@ import {
 } from '../domain/coursePushIngest';
 import { decodeQr, describeQrDecodeError } from '../domain/qrEnvelope';
 import type { RootStackScreenProps } from '../navigation';
+import { recordFinish } from '../stores/leaderboardRepo';
 import { useCommitteeTrustStore } from '../stores/useCommitteeTrustStore';
 import { useCoursesStore } from '../stores/useCoursesStore';
 import { useMarksStore } from '../stores/useMarksStore';
@@ -233,6 +236,69 @@ export function ScanCoursePushScreen({
                   setStatus({
                     kind: 'error',
                     message: err instanceof Error ? err.message : 'Join failed',
+                  });
+                }
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      // openracer-finish (Phase 1.15 — leaderboard share)
+      if (envelope.envelope.kind === 'openracer-finish') {
+        const result = decodeFinishRecord(JSON.stringify(envelope.envelope.bundle));
+        if (!result.ok) {
+          setStatus({
+            kind: 'error',
+            message: describeFinishDecodeError(result.error),
+          });
+          return;
+        }
+        const finish = result.bundle;
+        const senderTrust = await lookupTrust(finish.payload.senderId);
+        if (!senderTrust) {
+          setStatus({
+            kind: 'error',
+            message: `Unknown sender "${finish.payload.senderName}". Have them show their identity QR first so you can trust their key.`,
+          });
+          return;
+        }
+        if (senderTrust.publicKey !== finish.publicKey) {
+          setStatus({
+            kind: 'error',
+            message: `Sender "${finish.payload.senderName}" is trusted but their key changed.`,
+          });
+          return;
+        }
+        const elapsedMin = Math.floor(finish.payload.elapsedSeconds / 60);
+        const elapsedSec = finish.payload.elapsedSeconds % 60;
+        Alert.alert(
+          `Add ${finish.payload.boatName} to leaderboard?`,
+          `Race: ${finish.payload.raceName}\nElapsed: ${elapsedMin}:${elapsedSec.toString().padStart(2, '0')}\nFrom: ${finish.payload.senderName}`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => {
+                lastHandled.current = null;
+                setStatus({ kind: 'scanning' });
+              },
+            },
+            {
+              text: 'Add',
+              style: 'default',
+              onPress: async () => {
+                try {
+                  await recordFinish(finish.payload);
+                  setStatus({
+                    kind: 'success',
+                    message: `Added ${finish.payload.boatName} to "${finish.payload.raceName}" leaderboard.`,
+                  });
+                } catch (err) {
+                  setStatus({
+                    kind: 'error',
+                    message: err instanceof Error ? err.message : 'Save failed',
                   });
                 }
               },

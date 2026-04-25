@@ -156,6 +156,29 @@ const m0006_race_track_points: Migration = async (db) => {
   `);
 };
 
+/** v10 — leaderboard_entries. Stores received finish records keyed by
+ *  (raceName + gunAt + senderId) so the same boat sharing twice doesn't
+ *  duplicate. Phase 1.15. */
+const m0010_leaderboard: Migration = async (db) => {
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS leaderboard_entries (
+      id TEXT PRIMARY KEY NOT NULL,
+      race_name TEXT NOT NULL,
+      gun_at TEXT NOT NULL,
+      sender_id TEXT NOT NULL,
+      sender_name TEXT NOT NULL,
+      boat_name TEXT NOT NULL,
+      finished_at TEXT NOT NULL,
+      elapsed_seconds INTEGER NOT NULL,
+      course_id TEXT,
+      received_at TEXT NOT NULL,
+      UNIQUE (race_name, gun_at, sender_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_leaderboard_race
+      ON leaderboard_entries (race_name, gun_at);
+  `);
+};
+
 export const migrations: Migration[] = [
   m0001_kv_store,
   m0002_marks,
@@ -166,4 +189,5 @@ export const migrations: Migration[] = [
   m0007_courses_start_type,
   m0008_marks_colour_hint,
   m0009_joined_boats,
+  m0010_leaderboard,
 ];
