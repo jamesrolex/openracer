@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CommitteeIdentityScreen } from '../screens/CommitteeIdentityScreen';
 import { CourseEntryScreen } from '../screens/CourseEntryScreen';
 import { CourseLibraryScreen } from '../screens/CourseLibraryScreen';
+import { CruiseDisplayScreen } from '../screens/CruiseDisplayScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MarkBearingScreen } from '../screens/MarkBearingScreen';
 import { MarkEditScreen } from '../screens/MarkEditScreen';
@@ -49,6 +50,7 @@ export type RootStackParamList = {
   ScanCoursePush: undefined;
   TrustedCommittees: undefined;
   RaceTimer: undefined;
+  CruiseDisplay: undefined;
   RaceSessions: undefined;
   RaceSession: { sessionId: string };
   Settings: undefined;
@@ -85,6 +87,7 @@ export function RootNavigator() {
       <Stack.Screen name="ScanCoursePush" component={ScanCoursePushScreen} />
       <Stack.Screen name="TrustedCommittees" component={TrustedCommitteesScreen} />
       <Stack.Screen name="RaceTimer" component={RaceTimerScreen} />
+      <Stack.Screen name="CruiseDisplay" component={CruiseDisplayScreen} />
       <Stack.Screen name="RaceSessions" component={RaceSessionsScreen} />
       <Stack.Screen name="RaceSession" component={RaceSessionScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />

@@ -14,14 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
 import { CourseProgressReadout } from '../components/CourseProgressReadout';
+import { DashboardSelector } from '../components/DashboardSelector';
 import { GunSyncButton } from '../components/GunSyncButton';
-import { HelmDisplayLayout } from '../components/HelmDisplayLayout';
 import { RabbitStartPanel } from '../components/RabbitStartPanel';
 import { WindShiftBar } from '../components/WindShiftBar';
 import { useBoatStore } from '../stores/useBoatStore';
 import { computeCourseDistance } from '../domain/courseDistance';
 import { evaluatePolar, parsePolarTable } from '../domain/polars';
-import { computeBoatStartState } from '../domain/startLine';
 import { useWindShiftTracker } from '../hooks/useWindShiftTracker';
 import { metresPerSecondToKnots } from '../utils/format';
 import {
@@ -72,6 +71,8 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
 
   const helmMode = useSettingsStore((s) => s.helmDisplayMode);
   const setHelmMode = useSettingsStore((s) => s.setHelmDisplayMode);
+  const lastRaceDashboardId = useSettingsStore((s) => s.lastRaceDashboardId);
+  const setLastRaceDashboardId = useSettingsStore((s) => s.setLastRaceDashboardId);
   const polarRaw = useSettingsStore((s) => s.polarRaw);
   const trueWindKn = useSettingsStore((s) => s.manualTrueWindKn);
   const trueWindDeg = useSettingsStore((s) => s.manualTrueWindDegrees);
@@ -88,25 +89,6 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
     const raw = Math.abs(((trueWindDeg - cogVal + 540) % 360) - 180);
     return evaluatePolar(polar, trueWindKn, raw);
   })();
-
-  // Helm display needs the live start-line geometry. Recomputed cheaply
-  // each render since this screen is the only consumer.
-  const position = useBoatStore((s) => s.position);
-  const cog = useBoatStore((s) => s.cog);
-  const sog = useBoatStore((s) => s.sog);
-  const startLeg = draft?.legs.find((l) => l.type === 'start');
-  const cb = marks.find((m) => m.id === startLeg?.markIds[0]);
-  const pin = marks.find((m) => m.id === startLeg?.markIds[1]);
-  const startLineState =
-    cb && pin && position && draft?.startType === 'standard-line'
-      ? computeBoatStartState(
-          position,
-          cog,
-          sog,
-          { latitude: cb.latitude, longitude: cb.longitude },
-          { latitude: pin.latitude, longitude: pin.longitude },
-        )
-      : null;
 
   const [snapshot, setSnapshot] = useState(() =>
     makeSnapshot(sequenceStartTime, new Date(), sequence, {
@@ -262,23 +244,18 @@ export function RaceTimerScreen({ navigation }: RootStackScreenProps<'RaceTimer'
   const primaryLabel = formatCountdown(snapshot.secondsToStart);
   const stateLabel = labelForState(snapshot.state);
 
-  // Helm Display Mode — strip everything but the countdown + a single
-  // secondary readout. Long-press inside the layout exits.
+  // Helm Display Mode — opens the dashboard catalogue. The countdown is
+  // the first dashboard; swipe cycles to wind / VMG / big-numbers.
+  // Long-press anywhere reveals an exit affordance.
   if (helmMode) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top', 'bottom']}>
-        <HelmDisplayLayout
-          snapshot={snapshot}
-          distanceToLineMetres={
-            startLineState?.side === 'behind'
-              ? -Math.abs(startLineState.distanceMetres)
-              : startLineState?.distanceMetres ?? null
-          }
-          secondsToLine={startLineState?.secondsToLine ?? null}
-          totalCourseMetres={totalMetres}
-          sailedMetres={sailedMetres}
-          onExit={() => setHelmMode(false)}
+        <DashboardSelector
           variant={variant}
+          mode="race"
+          initialDashboardId={lastRaceDashboardId}
+          onDashboardChange={setLastRaceDashboardId}
+          onExit={() => setHelmMode(false)}
         />
       </SafeAreaView>
     );

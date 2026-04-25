@@ -48,6 +48,12 @@ export interface SettingsState {
   /** Persistent boat name — set once, used everywhere a captain shares
    *  their boat. Null until the sailor enters it. */
   boatName: string | null;
+  /** Last-shown dashboard id while a race timer was armed. Used to open
+   *  the catalogue back on the same view. Null falls back to the first
+   *  race-mode dashboard. Phase 1.8. */
+  lastRaceDashboardId: string | null;
+  /** Last-shown dashboard id while no race was armed. Phase 1.8. */
+  lastCruiseDashboardId: string | null;
 }
 
 export interface SettingsActions {
@@ -62,6 +68,8 @@ export interface SettingsActions {
   setManualTrueWindKn: (kn: number | null) => void;
   setPolarRaw: (raw: string | null) => void;
   setBoatName: (name: string | null) => void;
+  setLastRaceDashboardId: (id: string | null) => void;
+  setLastCruiseDashboardId: (id: string | null) => void;
 }
 
 const defaults: SettingsState = {
@@ -77,6 +85,8 @@ const defaults: SettingsState = {
   manualTrueWindKn: null,
   polarRaw: null,
   boatName: null,
+  lastRaceDashboardId: null,
+  lastCruiseDashboardId: null,
 };
 
 export const useSettingsStore = create<SettingsState & SettingsActions>()(
@@ -100,6 +110,8 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       setManualTrueWindKn: (manualTrueWindKn) => set({ manualTrueWindKn }),
       setPolarRaw: (polarRaw) => set({ polarRaw }),
       setBoatName: (boatName) => set({ boatName }),
+      setLastRaceDashboardId: (lastRaceDashboardId) => set({ lastRaceDashboardId }),
+      setLastCruiseDashboardId: (lastCruiseDashboardId) => set({ lastCruiseDashboardId }),
     }),
     {
       name: 'openracer.settings',
@@ -117,6 +129,8 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         manualTrueWindKn: state.manualTrueWindKn,
         polarRaw: state.polarRaw,
         boatName: state.boatName,
+        lastRaceDashboardId: state.lastRaceDashboardId,
+        lastCruiseDashboardId: state.lastCruiseDashboardId,
       }),
     },
   ),

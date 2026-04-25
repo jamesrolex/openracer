@@ -86,14 +86,16 @@ The container component that holds the catalogue:
   the current mode — race / cruise).
 - Last-shown dashboard id persists per mode in useSettingsStore.
 
-### 1.8.7 — Wire into RaceTimerScreen + Settings
+### 1.8.7 — Wire into RaceTimerScreen + Home
 
 - Race Timer's existing "Helm display" toggle now opens the
-  DashboardSelector instead of just one layout. First swipe goes
-  to the next race-mode dashboard.
-- Settings → Display gains a "Default dashboard (race / cruise)"
-  pair of pickers. Sets which dashboard is active when the sailor
-  enters helm mode.
+  DashboardSelector (race mode) instead of just one layout.
+- HomeScreen gains a "◐ Cruise display — wind / VMG / big numbers"
+  link in cruise mode (no race armed). Routes to a new
+  CruiseDisplayScreen that wraps the selector in cruise mode.
+- `lastRaceDashboardId` + `lastCruiseDashboardId` persist per mode
+  in useSettingsStore — re-entering the catalogue lands on the
+  last view shown for that mode.
 
 ## Out of scope for Phase 1.8
 
@@ -109,20 +111,84 @@ The container component that holds the catalogue:
 
 ## Phase 1.8 exit gate
 
-- [ ] Dashboard catalogue exports 4 dashboards (countdown, wind,
+- [x] Dashboard catalogue exports 4 dashboards (countdown, wind,
       VMG, big-numbers).
-- [ ] Project owner can swipe between race-mode dashboards from the
+- [x] Project owner can swipe between race-mode dashboards from the
       Race Timer's helm display toggle.
-- [ ] Each dashboard renders cleanly in day / night / kindle.
-- [ ] Settings → Default dashboard picker remembers per mode.
-- [ ] `npm run audit` clean.
-- [ ] EAS Update bundle published.
+- [x] Each dashboard renders cleanly in day / night / kindle.
+- [x] CruiseDisplay reachable from Home in cruise mode.
+- [x] Per-mode last-shown id persisted in useSettingsStore.
+- [x] `npm run audit` clean.
+- [x] EAS Update bundle published.
 
-## Sequencing
+---
 
-- **Hour 1**: 1.8.1 interface + registry skeleton.
-- **Hour 2**: 1.8.2 refactor HelmDisplayLayout → RaceCountdown.
-- **Hour 3**: 1.8.3 WindDashboard.
-- **Hour 4**: 1.8.4 VMGDashboard + 1.8.5 BigNumbers.
-- **Hour 5**: 1.8.6 selector + swipe.
-- **Hour 6**: 1.8.7 wire-in + settings + audit + commit + EAS.
+## Retro — 2026-04-25 (resumed after Phase 1.11 polish)
+
+Phase 1.8 was paused mid-spec back in March to ship the more concrete
+crew-sync work (1.9 → 1.11). Picked it back up after 1.11 went out.
+
+**Shipped:**
+
+- ✅ `src/dashboards/types.ts` — `DashboardDefinition` contract +
+  `dashboardsForMode` filter (4 unit tests).
+- ✅ `RaceCountdownDashboard` — rebuilt from HelmDisplayLayout's
+  shape but reading from stores directly (no prop drilling). 180-pt
+  countdown + state label + secondary readout.
+- ✅ `WindDashboard` — TWA + tack side + point-of-sail label
+  (close-hauled / beam reach / etc.) + TWS / TWD numbers. Wind shift
+  bar pinned at the bottom.
+- ✅ `VMGDashboard` — TARGET (polar) / ACTUAL (SOG) / VMG numbers
+  stacked vertically + percent-of-target bar. Honest empty-state
+  when polar or wind is missing.
+- ✅ `BigNumbersDashboard` — SOG (220-pt) + COG (120-pt). Respects
+  user speed-unit setting (kn / kmh / mph). Simplest fallback.
+- ✅ `DashboardSelector` — chrome strip with chevrons, dashboard
+  name + N/total counter, "•••" inline picker, horizontal swipe to
+  cycle, long-press for exit affordance.
+- ✅ Wired into RaceTimerScreen → race-mode catalogue replaces the
+  single-view helm-mode branch; persists `lastRaceDashboardId`.
+- ✅ New `CruiseDisplayScreen` reachable from Home (cruise mode
+  only); persists `lastCruiseDashboardId`.
+
+**Architecture decisions worth keeping:**
+
+- **Each dashboard reads from stores directly** — keeps the
+  catalogue declarative (no big switch on dashboard id passing
+  props down). Adding a fifth dashboard is a one-line append to
+  `dashboardCatalogue`.
+- **PanResponder, not Reanimated** — for a swipe-to-cycle gesture,
+  the built-in `PanResponder` is sufficient and adds nothing to
+  the bundle. Reanimated stays reserved for the chart renderer
+  (Phase 2).
+- **Long-press exit at the container, not per-dashboard** — the
+  dashboard component never has to know about exit, which keeps
+  the contract simple.
+
+**Unchanged (deliberately):**
+
+- The legacy `HelmDisplayLayout` component is left in place and
+  un-imported. Will be deleted in Phase 1.8.1 cleanup once we're
+  sure the dashboard catalogue is the right shape.
+
+**What this enables:**
+
+- Dad helms upwind on Pantera. Phone's mounted. He swipes once →
+  Wind dashboard. He sees +6° lift on the bar, eases the sheet.
+  Swipes back → Race countdown for the start gun.
+- A delivery cruise: open cruise display, leave it on big-numbers
+  the whole way. SOG and COG fill the screen, easy to read at a
+  glance from the helm.
+- Phase 7 e-ink port: the same `DashboardDefinition` contract is
+  what the Pi will render. Each Kindle gets one dashboard pinned;
+  the catalogue is the configuration surface.
+
+**Phase placement next:**
+
+Phase 2 (charts) is still gated on Apple Developer Program £79.
+Other Phase 1.x candidates that don't need either:
+
+- Per-leg timer (start of each leg → "leg 2 sailed in 4:32").
+- Voice race-officer cues (audio: "3 minutes — 2 minutes — gun!").
+- Wind shift trend graph (history of computed shifts over the race).
+- Boat-leaderboard share (post-race QR with boats + finish times).
