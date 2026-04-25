@@ -17,10 +17,12 @@ import { raceCountdownDashboard } from './RaceCountdownDashboard';
 import type { DashboardDefinition } from './types';
 import { vmgDashboard } from './VMGDashboard';
 import { windDashboard } from './WindDashboard';
+import { windTrendDashboard } from './WindTrendDashboard';
 
 export const dashboardCatalogue: readonly DashboardDefinition[] = [
   raceCountdownDashboard, // race-only — first when the timer is armed
   windDashboard,          // tactical — works in race + cruise
+  windTrendDashboard,     // tactical — 5-min shift history
   vmgDashboard,           // tactical — works in race + cruise
   bigNumbersDashboard,    // simplest fallback, always available
 ];

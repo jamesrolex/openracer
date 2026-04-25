@@ -12,14 +12,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'tamagui';
 
 import { buildGpx, gpxFilename } from '../domain/gpxExport';
+import { computeLegTimings, formatLegDuration } from '../domain/legTiming';
 import { computeTrackStats, formatDuration } from '../domain/trackStats';
 import type { RootStackScreenProps } from '../navigation';
+import { getCourse } from '../stores/coursesRepo';
+import { listMarks } from '../stores/marksRepo';
 import {
   getRaceSession,
   listTrackPoints,
   type TrackPoint,
 } from '../stores/raceSessionsRepo';
 import { useSettingsStore } from '../stores/useSettingsStore';
+import type { Course } from '../types/course';
+import type { Mark } from '../types/mark';
 import { getTheme } from '../theme/theme';
 import type { RaceSession } from '../types/race';
 import { formatLatLon } from '../utils/format';
@@ -33,6 +38,8 @@ export function RaceSessionScreen({
 
   const [session, setSession] = useState<RaceSession | null>(null);
   const [points, setPoints] = useState<TrackPoint[]>([]);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [marks, setMarks] = useState<Mark[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
@@ -76,11 +83,25 @@ export function RaceSessionScreen({
       const p = await listTrackPoints(route.params.sessionId);
       setSession(s);
       setPoints(p);
+      if (s?.courseId) {
+        const c = await getCourse(s.courseId);
+        setCourse(c);
+        // Listing every mark is fine — repo caps at a few hundred and
+        // legTiming only iterates the ids referenced by the legs.
+        if (c) setMarks(await listMarks());
+      }
       setLoading(false);
     })();
   }, [route.params.sessionId]);
 
   const stats = useMemo(() => computeTrackStats(points), [points]);
+  const legTimings = useMemo(
+    () =>
+      course
+        ? computeLegTimings(course.legs, points, marks)
+        : { legs: [], totalDurationSeconds: 0, totalDistanceMetres: 0 },
+    [course, points, marks],
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
@@ -204,6 +225,100 @@ export function RaceSessionScreen({
               />
               <StatRow theme={theme} label="Track points" value={`${stats.pointCount}`} />
             </View>
+
+            {legTimings.legs.length > 0 ? (
+              <>
+                <Label theme={theme}>Leg breakdown</Label>
+                <View
+                  padding={theme.space.md}
+                  borderRadius={theme.radius.lg}
+                  borderColor={theme.border}
+                  borderWidth={1}
+                  marginBottom={theme.space.md}
+                >
+                  {legTimings.legs.map((leg, idx) => (
+                    <View
+                      key={leg.legId}
+                      flexDirection="row"
+                      justifyContent="space-between"
+                      alignItems="baseline"
+                      paddingVertical={theme.space.xs}
+                      borderBottomWidth={idx < legTimings.legs.length - 1 ? 1 : 0}
+                      borderBottomColor={theme.border}
+                    >
+                      <View flex={1} paddingRight={theme.space.sm}>
+                        <Text
+                          color={theme.text.primary}
+                          fontSize={theme.type.body.size}
+                          fontWeight={theme.type.bodySemi.weight as '600'}
+                        >
+                          {leg.index + 1}. {leg.legLabel}
+                        </Text>
+                        {leg.status === 'incomplete' ? (
+                          <Text
+                            color={theme.text.muted}
+                            fontSize={theme.type.caption.size}
+                          >
+                            Mark not rounded
+                          </Text>
+                        ) : null}
+                      </View>
+                      <Text
+                        color={theme.text.primary}
+                        fontSize={theme.type.bodySemi.size}
+                        fontWeight="700"
+                        style={{ fontFamily: 'Menlo' }}
+                      >
+                        {formatLegDuration(leg.durationSeconds)}
+                      </Text>
+                      {leg.distanceMetres !== null ? (
+                        <Text
+                          color={theme.text.muted}
+                          fontSize={theme.type.caption.size}
+                          marginLeft={theme.space.sm}
+                          style={{ fontFamily: 'Menlo', minWidth: 56, textAlign: 'right' }}
+                        >
+                          {(leg.distanceMetres / 1852).toFixed(2)} nm
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              </>
+            ) : null}
+
+            {session.finishedAt ? (
+              <Pressable
+                onPress={() =>
+                  navigation.navigate('ShareFinish', { sessionId: session.id })
+                }
+                hitSlop={8}
+              >
+                <View
+                  padding={theme.space.md}
+                  marginBottom={theme.space.md}
+                  borderRadius={theme.radius.lg}
+                  borderColor={theme.accent}
+                  borderWidth={1}
+                  alignItems="center"
+                >
+                  <Text
+                    color={theme.accent}
+                    fontSize={theme.type.bodySemi.size}
+                    fontWeight="700"
+                  >
+                    ⇪ Share finish
+                  </Text>
+                  <Text
+                    color={theme.text.muted}
+                    fontSize={theme.type.caption.size}
+                    marginTop={2}
+                  >
+                    QR for competitors&apos; leaderboards.
+                  </Text>
+                </View>
+              </Pressable>
+            ) : null}
 
             {stats.boundingBox ? (
               <>
